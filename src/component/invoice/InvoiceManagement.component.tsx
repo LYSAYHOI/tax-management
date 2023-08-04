@@ -55,7 +55,9 @@ export default function InvoiceManagementComponent() {
       }
     } catch (error) {
       const err = error as AxiosError<any>;
-      alert(err?.response?.data?.message);
+      if (err.response?.status === 500 || err.response?.status === 400) {
+        alert(err?.response?.data?.message);
+      }
     }
   };
 

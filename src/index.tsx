@@ -11,6 +11,7 @@ const root = ReactDOM.createRoot(
 root.render(
   // <React.StrictMode>
   <BrowserRouter>
+    <span id="loader-span" className="loader"></span>
     <App />
   </BrowserRouter>
   // </React.StrictMode>

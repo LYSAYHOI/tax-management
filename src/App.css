@@ -18,6 +18,7 @@ tr:nth-child(even) {
 .control-pane {
   display: flex;
   justify-content: space-between;
+  align-items: center;
 }
 
 button {

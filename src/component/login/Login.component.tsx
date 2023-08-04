@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import "./Login.style.css";
 
@@ -6,6 +6,13 @@ export default function LoginComponent() {
   const navigate = useNavigate();
   const [showCode, setShowCode] = useState(false);
   const [token, setToken] = useState("");
+
+  useEffect(() => {
+    const token = localStorage.getItem("at");
+    if (token != null && token !== "") {
+      navigate("/invoice-management");
+    }
+  }, []);
 
   const openSourceCode = () => {
     setShowCode(true);
@@ -15,7 +22,7 @@ export default function LoginComponent() {
     if (token === "") {
       alert("Nhập mã để tiếp tục");
     } else {
-      localStorage.setItem("at", token);
+      localStorage.setItem("at", token.replaceAll("'", ""));
       navigate("/invoice-management");
     }
   };

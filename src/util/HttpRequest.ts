@@ -1,21 +1,29 @@
 import axios from "axios";
-import { useNavigate } from "react-router-dom";
 import { RETRY_URL } from "../util/Constant";
 
 const instance = axios.create({
-  baseURL: "http://localhost:5000/query/invoices",
+  baseURL: "https://hoadondientu.gdt.gov.vn:30000/query/invoices",
   headers: { Authorization: `Bearer ${localStorage.getItem("at")}` },
 });
 
+instance.interceptors.request.use(
+  (config) => {
+    document.getElementById("loader-span")?.classList.add("loader");
+    return config;
+  },
+  (error) => {
+    return Promise.reject(error);
+  }
+);
+
 instance.interceptors.response.use(
-  (res) => res,
+  (res) => {
+    document.getElementById("loader-span")?.classList.remove("loader");
+    return res;
+  },
   (err) => {
+    document.getElementById("loader-span")?.classList.remove("loader");
     if (err.response?.status === 403 && RETRY_URL.includes(err.config.url)) {
-      console.log("download again ", err?.config);
-      console.log(
-        "download again ",
-        `${err?.config.params.khhdon}-${err?.config.params.shdon}`
-      );
       return instance.request(err?.config);
     } else if (err.response?.status === 401) {
       window.location.href = "/login";
