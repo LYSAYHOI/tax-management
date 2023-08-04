@@ -119,7 +119,6 @@ export default function InvoiceManagementComponent() {
   const handleSearch = () => {
     setStateList([undefined]);
     setCurrentPage(0);
-    getInvoiceData(undefined);
   };
 
   const onRadioButtonChange = (e: any) => {
