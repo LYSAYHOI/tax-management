@@ -3,12 +3,13 @@ import { RETRY_URL } from "../util/Constant";
 
 const instance = axios.create({
   baseURL: "https://hoadondientu.gdt.gov.vn:30000/query/invoices",
-  headers: { Authorization: `Bearer ${localStorage.getItem("at")}` },
+  // baseURL: "http://localhost:8080/query/invoices",
 });
 
 instance.interceptors.request.use(
   (config) => {
     document.getElementById("loader-span")?.classList.add("loader");
+    config.headers.Authorization = `Bearer ${localStorage.getItem("at")}`;
     return config;
   },
   (error) => {
