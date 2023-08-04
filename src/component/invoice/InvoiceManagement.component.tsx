@@ -63,7 +63,7 @@ export default function InvoiceManagementComponent() {
 
   useEffect(() => {
     getInvoiceData(stateList[currentPage]);
-  }, [currentPage]);
+  }, [currentPage, stateList]);
 
   const downloadFile = (fileContent: any, filename: string) => {
     const blob = new Blob([fileContent], { type: "application/zip" });
