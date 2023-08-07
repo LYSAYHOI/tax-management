@@ -103,7 +103,14 @@ export default function InvoiceManagementComponent() {
       res.forEach((element) => {
         downloadResultRes = { ...downloadResultRes, ...element };
       });
-      setDownloadResult({ ...downloadResult, ...downloadResultRes });
+      const finalDownloadResult = { ...downloadResult, ...downloadResultRes };
+      const failList = Object.values(finalDownloadResult).filter(
+        (result) => !result
+      );
+      if (failList.length === 0) {
+        setHasAnyDownloadFail(false);
+      }
+      setDownloadResult(finalDownloadResult);
     });
   };
 
@@ -132,6 +139,10 @@ export default function InvoiceManagementComponent() {
 
   const onRadioButtonChange = (e: any) => {
     setTtxly(e.target.value);
+  };
+
+  const onDownloadSingleFile = (invoice: Invoice) => {
+    downloadAllFile([invoice]);
   };
 
   return (
@@ -223,7 +234,9 @@ export default function InvoiceManagementComponent() {
                   "Thành Công"
                 ) : downloadResult[`${invoice.khhdon}-${invoice.shdon}`] ===
                   false ? (
-                  <button>Tải Lại</button>
+                  <button onClick={() => onDownloadSingleFile(invoice)}>
+                    Tải Lại
+                  </button>
                 ) : (
                   ""
                 )}
