@@ -1,3 +1,9 @@
 .brown {
   background-color: #915715 !important;
 }
+.success {
+  background-color: #83db83;
+}
+.fail {
+  background-color: #edb0b0;
+}

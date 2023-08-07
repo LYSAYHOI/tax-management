@@ -1,4 +1,3 @@
-import { AxiosError, AxiosResponse } from "axios";
 import moment from "moment";
 import { useEffect, useState } from "react";
 import { ENDPOINT } from "../../util/Constant";
@@ -13,18 +12,15 @@ type Invoice = {
 };
 
 type InvoiceData = {
-  datas?: [];
+  datas?: any[];
   total?: number;
   state?: string;
-  time?: number;
 };
 
 export default function InvoiceManagementComponent() {
   const [invoiceData, setInvoiceData] = useState<InvoiceData>({});
-  const [stateList, setStateList] = useState<(string | undefined)[]>([
-    undefined,
-  ]);
-  const [currentPage, setCurrentPage] = useState(0);
+  const [downloadResult, setDownloadResult] = useState<any>({});
+  const [hasAnyDownloadFail, setHasAnyDownloadFail] = useState<boolean>(false);
   const [fromDate, setFromDate] = useState(
     moment().subtract(1, "months").format("yyyy-MM-DD")
   );
@@ -44,26 +40,9 @@ export default function InvoiceManagementComponent() {
     });
   };
 
-  const getInvoiceData = async (state: string | undefined) => {
-    try {
-      const invoiceListRes: AxiosResponse<InvoiceData> = await fetchInvoiceData(
-        state
-      );
-      setInvoiceData(invoiceListRes.data);
-      if (currentPage + 1 === stateList.length) {
-        setStateList([...stateList, invoiceListRes.data.state]);
-      }
-    } catch (error) {
-      const err = error as AxiosError<any>;
-      if (err.response?.status === 500 || err.response?.status === 400) {
-        alert(err?.response?.data?.message);
-      }
-    }
-  };
-
   useEffect(() => {
-    getInvoiceData(stateList[currentPage]);
-  }, [currentPage, stateList]);
+    fetchAllInvoice([], undefined);
+  }, []);
 
   const downloadFile = (fileContent: any, filename: string) => {
     const blob = new Blob([fileContent], { type: "application/zip" });
@@ -76,36 +55,64 @@ export default function InvoiceManagementComponent() {
     document.body.removeChild(link);
   };
 
-  const downloadAllFileInAllPages = async (state: string | undefined) => {
+  const fetchAllInvoice = async (
+    invoiceList: any[],
+    state: string | undefined
+  ) => {
     const res = await fetchInvoiceData(state);
-    const invoiceDataRes = res.data as InvoiceData;
-    downloadAllFile(invoiceDataRes.datas || []);
-    if (invoiceDataRes.state) {
-      downloadAllFileInAllPages(invoiceDataRes.state);
+    const {
+      datas: dataRes,
+      state: stateRes,
+      total: totalRes,
+    } = res.data as InvoiceData;
+    invoiceList.push(...(dataRes || []));
+    if (stateRes) {
+      fetchAllInvoice(invoiceList, stateRes);
     } else {
-      return;
+      setInvoiceData({
+        datas: [...invoiceList],
+        total: totalRes,
+      });
     }
   };
 
+  const downloadAllFileInAllPages = () => {
+    downloadAllFile(invoiceData.datas || []);
+  };
+
   const downloadAllFile = (invoiceList: Invoice[]) => {
-    invoiceList.forEach((invoice: any) => {
-      getFile(ENDPOINT.EXPORT_INVOICE_API, {
+    const promiseList = invoiceList.map((invoice: any) => {
+      return getFile(ENDPOINT.EXPORT_INVOICE_API, {
         nbmst: invoice.nbmst,
         khhdon: invoice.khhdon,
         shdon: invoice.shdon,
         khmshdon: invoice.khmshdon,
-      }).then((res) => {
-        downloadFile(res.data, `${invoice.khhdon}-${invoice.shdon}`);
+      })
+        .then((res) => {
+          downloadFile(res.data, `${invoice.khhdon}-${invoice.shdon}`);
+          return { [`${invoice.khhdon}-${invoice.shdon}`]: true };
+        })
+        .catch((err) => {
+          setHasAnyDownloadFail(true);
+          return { [`${invoice.khhdon}-${invoice.shdon}`]: false };
+        });
+    });
+
+    Promise.all(promiseList).then((res) => {
+      let downloadResultRes = {};
+      res.forEach((element) => {
+        downloadResultRes = { ...downloadResultRes, ...element };
       });
+      setDownloadResult({ ...downloadResult, ...downloadResultRes });
     });
   };
 
-  const handleNextPage = () => {
-    setCurrentPage(currentPage + 1);
-  };
-  const handlePrevPage = () => {
-    const page = currentPage - 1;
-    setCurrentPage(page);
+  const downloadAllFailed = () => {
+    const downloadFailInvoiceList = invoiceData.datas?.filter(
+      (invoice) =>
+        downloadResult[`${invoice.khhdon}-${invoice.shdon}`] === false
+    );
+    downloadAllFile(downloadFailInvoiceList || []);
   };
 
   const onChangeFromDate = (e: any) => {
@@ -117,12 +124,13 @@ export default function InvoiceManagementComponent() {
   };
 
   const handleSearch = () => {
-    setStateList([undefined]);
-    setCurrentPage(0);
+    setDownloadResult({});
+    setHasAnyDownloadFail(false);
+    setInvoiceData({});
+    fetchAllInvoice([], undefined);
   };
 
   const onRadioButtonChange = (e: any) => {
-    console.log(e.target.value);
     setTtxly(e.target.value);
   };
 
@@ -132,10 +140,19 @@ export default function InvoiceManagementComponent() {
         <button
           className="download-file"
           type="button"
-          onClick={() => downloadAllFileInAllPages(undefined)}
+          onClick={() => downloadAllFileInAllPages()}
         >
-          Download all XML file
+          Tải Tất Cả Hóa Đơn
         </button>
+        {hasAnyDownloadFail && (
+          <button
+            className="download-file"
+            type="button"
+            onClick={() => downloadAllFailed()}
+          >
+            Tải Lại Hóa Đơn Lỗi
+          </button>
+        )}
         <div>
           <label htmlFor="from">Từ Ngày:</label>
           <input
@@ -164,21 +181,6 @@ export default function InvoiceManagementComponent() {
           <button className="brown" type="button" onClick={handleSearch}>
             Tìm Kiếm
           </button>
-          <button
-            type="button"
-            onClick={handlePrevPage}
-            disabled={currentPage === 0}
-          >
-            Prev
-          </button>
-          <span className="page">{currentPage + 1}</span>
-          <button
-            type="button"
-            onClick={handleNextPage}
-            disabled={!invoiceData.state}
-          >
-            Next
-          </button>
         </div>
       </div>
       <table>
@@ -190,17 +192,42 @@ export default function InvoiceManagementComponent() {
             <th>Số hóa đơn</th>
             <th>Ký Hiệu Mẫu Số</th>
             <th>Ngày Lập</th>
+            <th>Kết Quả Tải</th>
           </tr>
         </thead>
         <tbody>
           {(invoiceData.datas || []).map((invoice: any, index) => (
             <tr key={`${invoice.khhdon}-${invoice.shdon}`}>
-              <td>{index + 1 + currentPage * 50}</td>
+              {/* <td>{index + 1 + currentPage * 50}</td> */}
+              <td>{index + 1}</td>
               <td>{invoice.nbmst}</td>
               <td>{invoice.khhdon}</td>
               <td>{invoice.shdon}</td>
               <td>{invoice.khmshdon}</td>
               <td>{new Date(invoice.tdlap).toDateString()}</td>
+              <td
+                className={`${
+                  (downloadResult[`${invoice.khhdon}-${invoice.shdon}`] ===
+                    true &&
+                    "success") ||
+                  (downloadResult[`${invoice.khhdon}-${invoice.shdon}`] ===
+                    false &&
+                    "fail") ||
+                  (downloadResult[`${invoice.khhdon}-${invoice.shdon}`] ==
+                    undefined &&
+                    "")
+                }`}
+              >
+                {downloadResult[`${invoice.khhdon}-${invoice.shdon}`] ===
+                true ? (
+                  "Thành Công"
+                ) : downloadResult[`${invoice.khhdon}-${invoice.shdon}`] ===
+                  false ? (
+                  <button>Tải Lại</button>
+                ) : (
+                  ""
+                )}
+              </td>
             </tr>
           ))}
         </tbody>
