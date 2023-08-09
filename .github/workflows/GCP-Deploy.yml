@@ -1,39 +1,36 @@
-name: Docker
+name: Docker-Proxy
 
 on:
   push:
-    branches: [ main ]
+    branches: [proxy]
   pull_request:
-    branches: [ main ]
+    branches: [proxy]
 
 jobs:
+  deploy:
+    name: Setup Gcloud Account
+    runs-on: ubuntu-latest
+    env:
+      IMAGE_NAME: gcr.io/${{ secrets.GCP_PROJECT_ID }}/${{ secrets.GCP_APP_NAME_PROXY }}
+    steps:
+      - name: Login
+        uses: google-github-actions/setup-gcloud@v0
+        with:
+          project_id: ${{ secrets.GCP_PROJECT_ID }}
+          service_account_email: ${{ secrets.GCP_EMAIL }}
+          service_account_key: ${{ secrets.GCP_CREDENTIALS }}
 
-    deploy:
+      - name: Configure Docker
+        run: gcloud auth configure-docker --quiet
 
-        name: Setup Gcloud Account
-        runs-on: ubuntu-latest
-        env:
-          IMAGE_NAME: gcr.io/${{ secrets.GCP_PROJECT_ID }}/${{ secrets.GCP_APP_NAME }}
-        steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
 
-        - name: Login
-          uses: google-github-actions/setup-gcloud@v0
-          with:
-            project_id: ${{ secrets.GCP_PROJECT_ID }}
-            service_account_email: ${{ secrets.GCP_EMAIL }}
-            service_account_key: ${{ secrets.GCP_CREDENTIALS }}
+      - name: Build Docker image
+        run: docker build . -t $IMAGE_NAME
 
-        - name: Configure Docker
-          run: gcloud auth configure-docker --quiet
+      - name: Push Docker image
+        run: docker push $IMAGE_NAME
 
-        - name: Checkout repository
-          uses: actions/checkout@v2
-
-        - name: Build Docker image
-          run: docker build . -t $IMAGE_NAME
-
-        - name: Push Docker image
-          run: docker push $IMAGE_NAME
-
-        - name: Deploy Docker image
-          run: gcloud run deploy ${{ secrets.GCP_CR_SERVICE_NAME }} --image $IMAGE_NAME --region ${{ secrets.GCP_REGION }} --platform managed --allow-unauthenticated
+      - name: Deploy Docker image
+        run: gcloud run deploy ${{ secrets.GCP_CR_SERVICE_NAME_PROXY }} --image $IMAGE_NAME --region ${{ secrets.GCP_REGION }} --platform managed --allow-unauthenticated
