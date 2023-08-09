@@ -11,4 +11,4 @@ app.use('/query/**', createProxyMiddleware({
        proxyRes.headers['Access-Control-Allow-Origin'] = '*';
     }
 }));
-app.listen(8080, "0.0.0.0");
+app.listen(8080);
