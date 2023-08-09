@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { ENDPOINT } from "../../util/Constant";
 import { get, getFile } from "../../util/HttpRequest";
 import "./InvoiceManagement.style.css";
+import JSZip from "jszip";
 
 type Invoice = {
   nbmst: string;
@@ -49,7 +50,7 @@ export default function InvoiceManagementComponent() {
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
-    link.download = `${filename}.zip`;
+    link.download = filename;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -81,6 +82,8 @@ export default function InvoiceManagementComponent() {
   };
 
   const downloadAllFile = (invoiceList: Invoice[]) => {
+    setDownloadResult({});
+    const zipFile = new JSZip();
     const promiseList = invoiceList.map((invoice: any) => {
       return getFile(ENDPOINT.EXPORT_INVOICE_API, {
         nbmst: invoice.nbmst,
@@ -89,7 +92,9 @@ export default function InvoiceManagementComponent() {
         khmshdon: invoice.khmshdon,
       })
         .then((res) => {
-          downloadFile(res.data, `${invoice.khhdon}-${invoice.shdon}`);
+          zipFile.file(`${invoice.khhdon}-${invoice.shdon}.zip`, res.data, {
+            base64: true,
+          });
           return { [`${invoice.khhdon}-${invoice.shdon}`]: true };
         })
         .catch((err) => {
@@ -97,8 +102,8 @@ export default function InvoiceManagementComponent() {
           return { [`${invoice.khhdon}-${invoice.shdon}`]: false };
         });
     });
-
     Promise.all(promiseList).then((res) => {
+      // handle download result and set to state
       let downloadResultRes = {};
       res.forEach((element) => {
         downloadResultRes = { ...downloadResultRes, ...element };
@@ -111,6 +116,10 @@ export default function InvoiceManagementComponent() {
         setHasAnyDownloadFail(false);
       }
       setDownloadResult(finalDownloadResult);
+      // download all file
+      zipFile.generateAsync({ type: "blob" }).then(function (content) {
+        downloadFile(content, "all-invoice.zip");
+      });
     });
   };
 
