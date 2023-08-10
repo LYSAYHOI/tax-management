@@ -3,10 +3,12 @@ var cors = require('cors')
 const app = express();
 app.use(cors());
 const { createProxyMiddleware } = require('http-proxy-middleware');
+app.get('/api/**', function(req, res) {
+    res.send("hello tuowng")
+});
 app.use('/query/**', createProxyMiddleware({ 
     target: 'https://hoadondientu.gdt.gov.vn:30000',
     changeOrigin: true, 
-    //secure: false,
     onProxyRes: function (proxyRes, req, res) {
        proxyRes.headers['Access-Control-Allow-Origin'] = '*';
     }
