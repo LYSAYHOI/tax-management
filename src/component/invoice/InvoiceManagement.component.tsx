@@ -4,6 +4,7 @@ import { ENDPOINT } from "../../util/Constant";
 import { get, getFile } from "../../util/HttpRequest";
 import "./InvoiceManagement.style.css";
 import JSZip from "jszip";
+import { useNavigate } from "react-router";
 
 type Invoice = {
   nbmst: string;
@@ -19,6 +20,7 @@ type InvoiceData = {
 };
 
 export default function InvoiceManagementComponent() {
+  const navigate = useNavigate();
   const [invoiceData, setInvoiceData] = useState<InvoiceData>({});
   const [downloadResult, setDownloadResult] = useState<any>({});
   const [hasAnyDownloadFail, setHasAnyDownloadFail] = useState<boolean>(false);
@@ -201,6 +203,16 @@ export default function InvoiceManagementComponent() {
           <button className="brown" type="button" onClick={handleSearch}>
             Tìm Kiếm
           </button>
+          <button
+            className="red"
+            type="button"
+            onClick={() => {
+              localStorage.clear();
+              navigate("/login");
+            }}
+          >
+            Đăng Xuất
+          </button>
         </div>
       </div>
       <table>
@@ -208,6 +220,7 @@ export default function InvoiceManagementComponent() {
           <tr>
             <th>STT</th>
             <th>MST người bán</th>
+            <th>Người bán</th>
             <th>Ký Hiệu Hóa Đơn</th>
             <th>Số hóa đơn</th>
             <th>Ký Hiệu Mẫu Số</th>
@@ -221,6 +234,7 @@ export default function InvoiceManagementComponent() {
               {/* <td>{index + 1 + currentPage * 50}</td> */}
               <td>{index + 1}</td>
               <td>{invoice.nbmst}</td>
+              <td>{invoice.nbten}</td>
               <td>{invoice.khhdon}</td>
               <td>{invoice.shdon}</td>
               <td>{invoice.khmshdon}</td>
