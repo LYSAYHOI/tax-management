@@ -222,6 +222,9 @@ export default function InvoiceManagementComponent() {
             >
               Tải Lại Hóa Đơn Lỗi
             </button>
+            <span>{`${
+              Object.values(downloadResult).filter((result) => result).length
+            } / ${invoiceData.datas?.length || 0}`}</span>
           </div>
         )}
         <div>
