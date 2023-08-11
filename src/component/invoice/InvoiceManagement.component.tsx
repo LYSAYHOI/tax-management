@@ -117,7 +117,7 @@ export default function InvoiceManagementComponent() {
       const fileDataList: any[] = [];
       res.forEach(({ fileData, invoice, ...others }) => {
         if (fileData) fileDataList.push({ fileData, invoice });
-        downloadResultRes = { ...downloadResultRes, others };
+        downloadResultRes = { ...downloadResultRes, ...others };
       });
       const finalDownloadResult = { ...downloadResult, ...downloadResultRes };
       const failList = Object.values(finalDownloadResult).filter(
