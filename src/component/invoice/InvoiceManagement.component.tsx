@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { ENDPOINT } from "../../util/Constant";
 import { get, getFile } from "../../util/HttpRequest";
 import "./InvoiceManagement.style.css";
-import JSZip from "jszip";
+import JSZip, { loadAsync } from "jszip";
 import { useNavigate } from "react-router";
 
 type Invoice = {
@@ -86,7 +86,7 @@ export default function InvoiceManagementComponent() {
   const downloadAllFile = (invoiceList: Invoice[]) => {
     setDownloadResult({});
     const zipFile = new JSZip();
-    const promiseList = invoiceList.map((invoice: any) => {
+    const promiseList = invoiceList.map((invoice: any, index) => {
       return getFile(ENDPOINT.EXPORT_INVOICE_API, {
         nbmst: invoice.nbmst,
         khhdon: invoice.khhdon,
@@ -94,8 +94,20 @@ export default function InvoiceManagementComponent() {
         khmshdon: invoice.khmshdon,
       })
         .then((res) => {
-          zipFile.file(`${invoice.khhdon}-${invoice.shdon}.zip`, res.data, {
-            base64: true,
+          loadAsync(res.data, { base64: true }).then((invoiceFileContent) => {
+            if (invoiceFileContent.files["invoice.xml"]) {
+              invoiceFileContent.files["invoice.xml"]
+                .async("base64")
+                .then((fileDataBase64) => {
+                  zipFile.file(
+                    `${index + 1}-${invoice.khhdon}-${invoice.shdon}.xml`,
+                    fileDataBase64,
+                    {
+                      base64: true,
+                    }
+                  );
+                });
+            }
           });
           return { [`${invoice.khhdon}-${invoice.shdon}`]: true };
         })
