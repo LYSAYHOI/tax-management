@@ -3,9 +3,11 @@ import { useEffect, useState } from "react";
 import { ENDPOINT } from "../../util/Constant";
 import { get, getFile } from "../../util/HttpRequest";
 import "./InvoiceManagement.style.css";
-import JSZip from "jszip";
+import JSZip, { loadAsync } from "jszip";
+import { useNavigate } from "react-router";
 
 type Invoice = {
+  index?: number;
   nbmst: string;
   khhdon: number;
   shdon: number;
@@ -19,6 +21,7 @@ type InvoiceData = {
 };
 
 export default function InvoiceManagementComponent() {
+  const navigate = useNavigate();
   const [invoiceData, setInvoiceData] = useState<InvoiceData>({});
   const [downloadResult, setDownloadResult] = useState<any>({});
   const [hasAnyDownloadFail, setHasAnyDownloadFail] = useState<boolean>(false);
@@ -42,7 +45,7 @@ export default function InvoiceManagementComponent() {
   };
 
   useEffect(() => {
-    fetchAllInvoice([], undefined);
+    fetchAllInvoice([], undefined, 0);
   }, []);
 
   const downloadFile = (fileContent: any, filename: string) => {
@@ -58,7 +61,8 @@ export default function InvoiceManagementComponent() {
 
   const fetchAllInvoice = async (
     invoiceList: any[],
-    state: string | undefined
+    state: string | undefined,
+    page: number // page start from 0
   ) => {
     const res = await fetchInvoiceData(state);
     const {
@@ -66,9 +70,13 @@ export default function InvoiceManagementComponent() {
       state: stateRes,
       total: totalRes,
     } = res.data as InvoiceData;
-    invoiceList.push(...(dataRes || []));
+    const dataResMapIndex = dataRes?.map((data, index) => ({
+      ...data,
+      index: page * 50 + index + 1,
+    }));
+    invoiceList.push(...(dataResMapIndex || []));
     if (stateRes) {
-      fetchAllInvoice(invoiceList, stateRes);
+      fetchAllInvoice(invoiceList, stateRes, page + 1);
     } else {
       setInvoiceData({
         datas: [...invoiceList],
@@ -92,10 +100,11 @@ export default function InvoiceManagementComponent() {
         khmshdon: invoice.khmshdon,
       })
         .then((res) => {
-          zipFile.file(`${invoice.khhdon}-${invoice.shdon}.zip`, res.data, {
-            base64: true,
-          });
-          return { [`${invoice.khhdon}-${invoice.shdon}`]: true };
+          return {
+            [`${invoice.khhdon}-${invoice.shdon}`]: true,
+            fileData: res.data,
+            invoice,
+          };
         })
         .catch((err) => {
           setHasAnyDownloadFail(true);
@@ -105,8 +114,10 @@ export default function InvoiceManagementComponent() {
     Promise.all(promiseList).then((res) => {
       // handle download result and set to state
       let downloadResultRes = {};
-      res.forEach((element) => {
-        downloadResultRes = { ...downloadResultRes, ...element };
+      const fileDataList: any[] = [];
+      res.forEach(({ fileData, invoice, ...others }) => {
+        if (fileData) fileDataList.push({ fileData, invoice });
+        downloadResultRes = { ...downloadResultRes, ...others };
       });
       const finalDownloadResult = { ...downloadResult, ...downloadResultRes };
       const failList = Object.values(finalDownloadResult).filter(
@@ -117,8 +128,46 @@ export default function InvoiceManagementComponent() {
       }
       setDownloadResult(finalDownloadResult);
       // download all file
-      zipFile.generateAsync({ type: "blob" }).then(function (content) {
-        downloadFile(content, "all-invoice.zip");
+      downloadBase64File(fileDataList);
+    });
+  };
+
+  const downloadBase64File = (base64FileList: any[]) => {
+    const zipFile = new JSZip();
+    const base64FilePromise = base64FileList.map(({ fileData, invoice }) =>
+      loadAsync(fileData, { base64: true }).then((invoiceFileContent) => {
+        return Promise.resolve({ invoiceFileContent, invoice });
+      })
+    );
+    Promise.all(base64FilePromise).then((res) => {
+      const hasInvoiceXml: { content: JSZip; invoice: any }[] = [];
+      const noInvoiceXml: { content: JSZip; invoice: any }[] = [];
+      res.forEach(({ invoiceFileContent, invoice }) => {
+        if (invoiceFileContent.files["invoice.xml"]) {
+          hasInvoiceXml.push({ content: invoiceFileContent, invoice });
+        } else {
+          noInvoiceXml.push({ content: invoiceFileContent, invoice });
+        }
+      });
+      const base64FileHasXmlPromise = hasInvoiceXml.map(
+        ({ content, invoice }) =>
+          content.files["invoice.xml"].async("base64").then((fileXmlRes) => {
+            return Promise.resolve({ content: fileXmlRes, invoice });
+          })
+      );
+      Promise.all(base64FileHasXmlPromise).then((xmlResList) => {
+        xmlResList.forEach((element) => {
+          zipFile.file(
+            `${element.invoice?.index}-${element.invoice?.khhdon}-${element.invoice?.shdon}.xml`,
+            element.content,
+            {
+              base64: true,
+            }
+          );
+        });
+        zipFile.generateAsync({ type: "blob" }).then(function (content) {
+          downloadFile(content, "all-invoice.zip");
+        });
       });
     });
   };
@@ -143,7 +192,7 @@ export default function InvoiceManagementComponent() {
     setDownloadResult({});
     setHasAnyDownloadFail(false);
     setInvoiceData({});
-    fetchAllInvoice([], undefined);
+    fetchAllInvoice([], undefined, 0);
   };
 
   const onRadioButtonChange = (e: any) => {
@@ -165,13 +214,18 @@ export default function InvoiceManagementComponent() {
           Tải Tất Cả Hóa Đơn
         </button>
         {hasAnyDownloadFail && (
-          <button
-            className="download-file"
-            type="button"
-            onClick={() => downloadAllFailed()}
-          >
-            Tải Lại Hóa Đơn Lỗi
-          </button>
+          <div>
+            <button
+              className="download-file"
+              type="button"
+              onClick={() => downloadAllFailed()}
+            >
+              Tải Lại Hóa Đơn Lỗi
+            </button>
+            <span>{`${
+              Object.values(downloadResult).filter((result) => result).length
+            } / ${invoiceData.datas?.length || 0}`}</span>
+          </div>
         )}
         <div>
           <label htmlFor="from">Từ Ngày:</label>
@@ -201,6 +255,16 @@ export default function InvoiceManagementComponent() {
           <button className="brown" type="button" onClick={handleSearch}>
             Tìm Kiếm
           </button>
+          <button
+            className="red"
+            type="button"
+            onClick={() => {
+              localStorage.clear();
+              navigate("/login");
+            }}
+          >
+            Đăng Xuất
+          </button>
         </div>
       </div>
       <table>
@@ -208,6 +272,7 @@ export default function InvoiceManagementComponent() {
           <tr>
             <th>STT</th>
             <th>MST người bán</th>
+            <th>Người bán</th>
             <th>Ký Hiệu Hóa Đơn</th>
             <th>Số hóa đơn</th>
             <th>Ký Hiệu Mẫu Số</th>
@@ -221,6 +286,7 @@ export default function InvoiceManagementComponent() {
               {/* <td>{index + 1 + currentPage * 50}</td> */}
               <td>{index + 1}</td>
               <td>{invoice.nbmst}</td>
+              <td>{invoice.nbten}</td>
               <td>{invoice.khhdon}</td>
               <td>{invoice.shdon}</td>
               <td>{invoice.khmshdon}</td>
