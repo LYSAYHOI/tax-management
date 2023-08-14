@@ -33,4 +33,4 @@ jobs:
         run: docker push $IMAGE_NAME
 
       - name: Deploy Docker image
-        run: gcloud run deploy ${{ secrets.tax-management-service-dev }} --image $IMAGE_NAME --region ${{ secrets.GCP_REGION }} --platform managed --allow-unauthenticated --vpc-connector=tax-mgm-vpc-access --vpc-egress=all-traffic
+        run: gcloud run deploy tax-management-service-dev --image $IMAGE_NAME --region ${{ secrets.GCP_REGION }} --platform managed --allow-unauthenticated --vpc-connector=tax-mgm-vpc-access --vpc-egress=all-traffic
