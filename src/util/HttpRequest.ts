@@ -2,8 +2,8 @@ import axios from "axios";
 import { RETRY_URL } from "../util/Constant";
 
 const instance = axios.create({
-  // baseURL: `https://${window.location.host}/query/invoices`,
-  baseURL: `https://hoadondientu.gdt.gov.vn:30000/query/invoices`,
+  baseURL: `https://${window.location.host}/query/invoices`,
+  // baseURL: `https://hoadondientu.gdt.gov.vn:30000/query/invoices`,
   // baseURL: "http://localhost:8080/query/invoices",
 });
 
