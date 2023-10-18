@@ -107,7 +107,9 @@ export default function InvoiceManagementComponent() {
           };
         })
         .catch((err) => {
-          setHasAnyDownloadFail(true);
+          if (!hasAnyDownloadFail) {
+            setHasAnyDownloadFail(true);
+          }
           return { [`${invoice.khhdon}-${invoice.shdon}`]: false };
         });
     });
