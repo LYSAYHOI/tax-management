@@ -89,49 +89,36 @@ export default function InvoiceManagementComponent() {
     downloadAllFile(invoiceData.datas || []);
   };
 
-  const downloadAllFile = (invoiceList: Invoice[]) => {
+  const downloadAllFile = async (invoiceList: Invoice[]) => {
     setDownloadResult({});
-    const zipFile = new JSZip();
-    const promiseList = invoiceList.map((invoice: any) => {
-      return getFile(ENDPOINT.EXPORT_INVOICE_API, {
-        nbmst: invoice.nbmst,
-        khhdon: invoice.khhdon,
-        shdon: invoice.shdon,
-        khmshdon: invoice.khmshdon,
-      })
-        .then((res) => {
-          return {
-            [`${invoice.khhdon}-${invoice.shdon}`]: true,
-            fileData: res.data,
-            invoice,
-          };
+    const fileDataList: any[] = [];
+    let downloadResultRes = {};
+    for (const invoice of invoiceList) {
+      try {
+        const res = await getFile(ENDPOINT.EXPORT_INVOICE_API, {
+          nbmst: invoice.nbmst,
+          khhdon: invoice.khhdon,
+          shdon: invoice.shdon,
+          khmshdon: invoice.khmshdon,
         })
-        .catch((err) => {
-          if (!hasAnyDownloadFail) {
-            setHasAnyDownloadFail(true);
-          }
-          return { [`${invoice.khhdon}-${invoice.shdon}`]: false };
-        });
-    });
-    Promise.all(promiseList).then((res) => {
-      // handle download result and set to state
-      let downloadResultRes = {};
-      const fileDataList: any[] = [];
-      res.forEach(({ fileData, invoice, ...others }) => {
-        if (fileData) fileDataList.push({ fileData, invoice });
-        downloadResultRes = { ...downloadResultRes, ...others };
-      });
-      const finalDownloadResult = { ...downloadResult, ...downloadResultRes };
-      const failList = Object.values(finalDownloadResult).filter(
-        (result) => !result
-      );
-      if (failList.length === 0) {
-        setHasAnyDownloadFail(false);
+        if (res.data) {
+          fileDataList.push({ fileData: res.data, invoice });
+          downloadResultRes = { ...downloadResultRes, [`${invoice.khhdon}-${invoice.shdon}`]: true, };
+        }
+      } catch (err) {
+        downloadResultRes = { ...downloadResultRes, [`${invoice.khhdon}-${invoice.shdon}`]: false, };
       }
-      setDownloadResult(finalDownloadResult);
-      // download all file
-      downloadBase64File(fileDataList);
-    });
+    }
+    const finalDownloadResult = { ...downloadResult, ...downloadResultRes };
+    const failList = Object.values(finalDownloadResult).filter(
+      (result) => !result
+    );
+    if (failList.length === 0) {
+      setHasAnyDownloadFail(false);
+    }
+    setDownloadResult(finalDownloadResult);
+    // download all file
+    downloadBase64File(fileDataList);
   };
 
   const downloadBase64File = (base64FileList: any[]) => {
@@ -224,9 +211,8 @@ export default function InvoiceManagementComponent() {
             >
               Tải Lại Hóa Đơn Lỗi
             </button>
-            <span>{`${
-              Object.values(downloadResult).filter((result) => result).length
-            } / ${invoiceData.datas?.length || 0}`}</span>
+            <span>{`${Object.values(downloadResult).filter((result) => result).length
+              } / ${invoiceData.datas?.length || 0}`}</span>
           </div>
         )}
         <div>
@@ -294,20 +280,19 @@ export default function InvoiceManagementComponent() {
               <td>{invoice.khmshdon}</td>
               <td>{new Date(invoice.tdlap).toDateString()}</td>
               <td
-                className={`${
-                  (downloadResult[`${invoice.khhdon}-${invoice.shdon}`] ===
-                    true &&
-                    "success") ||
+                className={`${(downloadResult[`${invoice.khhdon}-${invoice.shdon}`] ===
+                  true &&
+                  "success") ||
                   (downloadResult[`${invoice.khhdon}-${invoice.shdon}`] ===
                     false &&
                     "fail") ||
                   (downloadResult[`${invoice.khhdon}-${invoice.shdon}`] ==
                     undefined &&
                     "")
-                }`}
+                  }`}
               >
                 {downloadResult[`${invoice.khhdon}-${invoice.shdon}`] ===
-                true ? (
+                  true ? (
                   "Thành Công"
                 ) : downloadResult[`${invoice.khhdon}-${invoice.shdon}`] ===
                   false ? (
