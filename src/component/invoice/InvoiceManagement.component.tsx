@@ -5,6 +5,8 @@ import { get, getFile } from "../../util/HttpRequest";
 import "./InvoiceManagement.style.css";
 import JSZip, { loadAsync } from "jszip";
 import { useNavigate } from "react-router";
+import { Button, CircularProgress, Dialog, DialogActions, DialogContent, DialogTitle } from "@mui/material";
+import { AxiosError } from "axios";
 
 type Invoice = {
   index?: number;
@@ -20,6 +22,10 @@ type InvoiceData = {
   state?: string;
 };
 
+enum InvoiceDownloadStatus {
+  SUCCESS, FAIL, NO_INVOICE
+}
+
 export default function InvoiceManagementComponent() {
   const navigate = useNavigate();
   const [invoiceData, setInvoiceData] = useState<InvoiceData>({});
@@ -30,6 +36,9 @@ export default function InvoiceManagementComponent() {
   );
   const [toDate, setToDate] = useState(moment().format("yyyy-MM-DD"));
   const [ttxly, setTtxly] = useState<number>(5);
+  const [inprogressDownloadNumber, setInprogressDownloadNumber] = useState(0);
+  const [isOpendownloadProgressDialog, setIsOpendownloadProgressDialog] = useState(false);
+  const [hasDownloadDetail, setHasDownloadDetail] = useState(false);
 
   const fetchInvoiceData = (state: string | undefined) => {
     const from = moment(fromDate, "yyyy-MM-DD");
@@ -87,12 +96,15 @@ export default function InvoiceManagementComponent() {
 
   const downloadAllFileInAllPages = () => {
     downloadAllFile(invoiceData.datas || []);
+    setIsOpendownloadProgressDialog(true);
+    setHasDownloadDetail(true);
   };
 
   const downloadAllFile = async (invoiceList: Invoice[]) => {
     setDownloadResult({});
     const fileDataList: any[] = [];
-    let downloadResultRes = {};
+    let downloadResultRes = { ...downloadResult };
+    let i = 0;
     for (const invoice of invoiceList) {
       try {
         const res = await getFile(ENDPOINT.EXPORT_INVOICE_API, {
@@ -103,20 +115,30 @@ export default function InvoiceManagementComponent() {
         })
         if (res.data) {
           fileDataList.push({ fileData: res.data, invoice });
-          downloadResultRes = { ...downloadResultRes, [`${invoice.khhdon}-${invoice.shdon}`]: true, };
+          downloadResultRes = { ...downloadResultRes, [`${invoice.khhdon}-${invoice.shdon}`]: InvoiceDownloadStatus.SUCCESS, };
         }
       } catch (err) {
-        downloadResultRes = { ...downloadResultRes, [`${invoice.khhdon}-${invoice.shdon}`]: false, };
+        const axiosErr = err as AxiosError;
+        if (axiosErr.response?.status === 500) {
+          downloadResultRes = { ...downloadResultRes, [`${invoice.khhdon}-${invoice.shdon}`]: InvoiceDownloadStatus.NO_INVOICE, };
+        } else {
+          setHasAnyDownloadFail(true);
+          downloadResultRes = { ...downloadResultRes, [`${invoice.khhdon}-${invoice.shdon}`]: InvoiceDownloadStatus.FAIL, };
+        }
+      } finally {
+        setDownloadResult(downloadResultRes);
+        setInprogressDownloadNumber(i + 1);
+        i++;
       }
     }
-    const finalDownloadResult = { ...downloadResult, ...downloadResultRes };
-    const failList = Object.values(finalDownloadResult).filter(
+    // const finalDownloadResult = { ...downloadResult, ...downloadResultRes };
+    const failList = Object.values(downloadResultRes).filter(
       (result) => !result
     );
     if (failList.length === 0) {
       setHasAnyDownloadFail(false);
     }
-    setDownloadResult(finalDownloadResult);
+    // setDownloadResult(finalDownloadResult);
     // download all file
     downloadBase64File(fileDataList);
   };
@@ -164,7 +186,7 @@ export default function InvoiceManagementComponent() {
   const downloadAllFailed = () => {
     const downloadFailInvoiceList = invoiceData.datas?.filter(
       (invoice) =>
-        downloadResult[`${invoice.khhdon}-${invoice.shdon}`] === false
+        downloadResult[`${invoice.khhdon}-${invoice.shdon}`] === InvoiceDownloadStatus.FAIL
     );
     downloadAllFile(downloadFailInvoiceList || []);
   };
@@ -182,6 +204,9 @@ export default function InvoiceManagementComponent() {
     setHasAnyDownloadFail(false);
     setInvoiceData({});
     fetchAllInvoice([], undefined, 0);
+    setInprogressDownloadNumber(0);
+    setHasAnyDownloadFail(false);
+    setHasDownloadDetail(false);
   };
 
   const onRadioButtonChange = (e: any) => {
@@ -202,19 +227,15 @@ export default function InvoiceManagementComponent() {
         >
           Tải Tất Cả Hóa Đơn
         </button>
-        {hasAnyDownloadFail && (
-          <div>
-            <button
-              className="download-file"
-              type="button"
-              onClick={() => downloadAllFailed()}
-            >
-              Tải Lại Hóa Đơn Lỗi
-            </button>
-            <span>{`${Object.values(downloadResult).filter((result) => result).length
-              } / ${invoiceData.datas?.length || 0}`}</span>
-          </div>
-        )}
+        {hasDownloadDetail && <div>
+          <button
+            className="download-file"
+            type="button"
+            onClick={() => setIsOpendownloadProgressDialog(true)}
+          >
+            Xem chi tiết kết quả tải về
+          </button>
+        </div>}
         <div>
           <label htmlFor="from">Từ Ngày:</label>
           <input
@@ -281,32 +302,52 @@ export default function InvoiceManagementComponent() {
               <td>{new Date(invoice.tdlap).toDateString()}</td>
               <td
                 className={`${(downloadResult[`${invoice.khhdon}-${invoice.shdon}`] ===
-                  true &&
+                  InvoiceDownloadStatus.SUCCESS &&
                   "success") ||
                   (downloadResult[`${invoice.khhdon}-${invoice.shdon}`] ===
-                    false &&
+                    InvoiceDownloadStatus.FAIL &&
                     "fail") ||
                   (downloadResult[`${invoice.khhdon}-${invoice.shdon}`] ==
-                    undefined &&
+                    InvoiceDownloadStatus.NO_INVOICE &&
                     "")
                   }`}
               >
                 {downloadResult[`${invoice.khhdon}-${invoice.shdon}`] ===
-                  true ? (
+                  InvoiceDownloadStatus.SUCCESS ?
                   "Thành Công"
-                ) : downloadResult[`${invoice.khhdon}-${invoice.shdon}`] ===
-                  false ? (
-                  <button onClick={() => onDownloadSingleFile(invoice)}>
-                    Tải Lại
-                  </button>
-                ) : (
-                  ""
-                )}
+                  : downloadResult[`${invoice.khhdon}-${invoice.shdon}`] ===
+                    InvoiceDownloadStatus.FAIL ? (
+                    <Button variant="outlined" onClick={() => onDownloadSingleFile(invoice)}>
+                      Tải Lại
+                    </Button>
+                  ) : downloadResult[`${invoice.khhdon}-${invoice.shdon}`] ===
+                    InvoiceDownloadStatus.NO_INVOICE ?
+                    "Không hóa đơn" : ""
+                }
               </td>
             </tr>
           ))}
         </tbody>
       </table>
+      <Dialog
+        open={isOpendownloadProgressDialog}
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogTitle >
+          Thông tin tải về
+        </DialogTitle>
+        <DialogContent className="progress-style">
+          <CircularProgress variant="determinate" value={invoiceData.total ? inprogressDownloadNumber / invoiceData.total * 100 : 0} />
+          <span>Tải thành công {Object.values(downloadResult).filter((result) => result === InvoiceDownloadStatus.SUCCESS).length} / {invoiceData.total || 0} files</span>
+          <span>Tải lỗi {Object.values(downloadResult).filter((result) => result === InvoiceDownloadStatus.FAIL).length} files</span>
+          <span>Không có hóa đơn {Object.values(downloadResult).filter((result) => result === InvoiceDownloadStatus.NO_INVOICE).length} files</span>
+        </DialogContent>
+        <DialogActions>
+          {hasAnyDownloadFail && <Button color="error" variant="contained" onClick={downloadAllFailed}>Tải lại hóa đơn lỗi</Button>}
+          <Button onClick={() => setIsOpendownloadProgressDialog(false)}>Đóng</Button>
+        </DialogActions>
+      </Dialog>
     </>
   );
 }

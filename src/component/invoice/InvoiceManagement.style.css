@@ -1,12 +1,21 @@
 .brown {
   background-color: #915715 !important;
 }
+
 .red {
   background-color: #d30000 !important;
 }
+
 .success {
   background-color: #83db83;
 }
+
 .fail {
   background-color: #edb0b0;
+}
+
+.progress-style {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
