@@ -1,7 +1,7 @@
 import moment from "moment";
 import { useEffect, useState } from "react";
 import { ENDPOINT } from "../../util/Constant";
-import { get, getFile } from "../../util/HttpRequest";
+import { Get, GetFile } from "../../util/HttpRequest";
 import "./InvoiceManagement.style.css";
 import JSZip, { loadAsync } from "jszip";
 import { useNavigate } from "react-router";
@@ -39,11 +39,12 @@ export default function InvoiceManagementComponent() {
   const [inprogressDownloadNumber, setInprogressDownloadNumber] = useState(0);
   const [isOpendownloadProgressDialog, setIsOpendownloadProgressDialog] = useState(false);
   const [hasDownloadDetail, setHasDownloadDetail] = useState(false);
+  const [isLoadingData, setIsLoadingData] = useState(false);
 
   const fetchInvoiceData = (state: string | undefined) => {
     const from = moment(fromDate, "yyyy-MM-DD");
     const to = moment(toDate, "yyyy-MM-DD");
-    return get(ENDPOINT.INVOICE_LIST_API, {
+    return Get(ENDPOINT.INVOICE_LIST_API, {
       sort: "tdlap:desc,khmshdon:asc,shdon:desc",
       size: 50,
       search: `tdlap=ge=${from.format(
@@ -73,6 +74,7 @@ export default function InvoiceManagementComponent() {
     state: string | undefined,
     page: number // page start from 0
   ) => {
+    setIsLoadingData(true);
     const res = await fetchInvoiceData(state);
     const {
       datas: dataRes,
@@ -91,6 +93,7 @@ export default function InvoiceManagementComponent() {
         datas: [...invoiceList],
         total: totalRes,
       });
+      setIsLoadingData(false);
     }
   };
 
@@ -107,7 +110,7 @@ export default function InvoiceManagementComponent() {
     let i = 0;
     for (const invoice of invoiceList) {
       try {
-        const res = await getFile(ENDPOINT.EXPORT_INVOICE_API, {
+        const res = await GetFile(ENDPOINT.EXPORT_INVOICE_API, {
           nbmst: invoice.nbmst,
           khhdon: invoice.khhdon,
           shdon: invoice.shdon,
@@ -329,6 +332,8 @@ export default function InvoiceManagementComponent() {
           ))}
         </tbody>
       </table>
+      {(invoiceData?.total == null || invoiceData?.total === 0) && !isLoadingData && <div className="no-invoice-text">Không tìm thấy hóa đơn nào</div>}
+      {isLoadingData && <CircularProgress className="loading-progress" />}
       <Dialog
         open={isOpendownloadProgressDialog}
         maxWidth="sm"

@@ -19,3 +19,16 @@
   flex-direction: column;
   align-items: center;
 }
+
+.no-invoice-text {
+  text-align: center;
+  font-size: 1.2rem;
+  font-weight: 600;
+  padding-top: 3rem;
+}
+
+.loading-progress {
+  position: absolute;
+  top: 50%;
+  left: 49%;
+}
