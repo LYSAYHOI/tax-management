@@ -1,8 +1,8 @@
 import axios, { AxiosError } from "axios";
 
 const instance = axios.create({
-  baseURL: `https://${window.location.host}/query/invoices`,
-  // baseURL: `https://hoadondientu.gdt.gov.vn:30000/query/invoices`,
+  // baseURL: `http://${window.location.host}/query/invoices`,
+  baseURL: `https://hoadondientu.gdt.gov.vn:30000/query/invoices`,
   // baseURL: "http://localhost:8080/query/invoices",
   timeout: 1000 * 10
 });
