@@ -1,5 +1,5 @@
 # build environment
-FROM node:18.19.0-alpine as build 
+FROM node:16.20.2-alpine3.18 as build 
 WORKDIR /react-app
 COPY . .
 RUN yarn install
