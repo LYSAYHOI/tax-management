@@ -12,7 +12,7 @@ export default function LoginComponent() {
     if (token != null && token !== "") {
       navigate("/invoice-management");
     }
-  }, []);
+  }, [navigate]);
 
   const openSourceCode = () => {
     setShowCode(true);

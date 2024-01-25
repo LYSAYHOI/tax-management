@@ -2,23 +2,23 @@ name: Develop
 
 on:
   push:
-    branches: [develop]
-  pull_request:
-    branches: [develop]
+    branches: [main, develop]
 
 jobs:
   deploy:
     name: Setup Gcloud Account
+    environment: ${{ github.ref == 'refs/heads/main' && 'prod' || 'dev' }}
     runs-on: ubuntu-latest
     env:
-      IMAGE_NAME: gcr.io/${{ secrets.GCP_PROJECT_ID }}/tax-management-cr-dev
+      PROJECT_ID: ${{ vars.GCP_PROJECT_ID }} # TODO: update Google Cloud project id
+      SERVICE: ${{ vars.GCP_CR_SERVICE_NAME }} # TODO: update Cloud Run service name
+      REGION: ${{ vars.GCP_REGION }} # TODO: update Cloud Run service region
+      IMAGE_NAME: gcr.io/${{ vars.GCP_PROJECT_ID }}/${{ vars.GCP_APP_NAME }}
     steps:
       - name: Login
-        uses: google-github-actions/setup-gcloud@v0
+        uses: "google-github-actions/auth@v2"
         with:
-          project_id: ${{ secrets.GCP_PROJECT_ID }}
-          service_account_email: ${{ secrets.GCP_EMAIL }}
-          service_account_key: ${{ secrets.GCP_CREDENTIALS }}
+          credentials_json: "${{ secrets.GCP_CREDENTIALS_JSON }}"
 
       - name: Configure Docker
         run: gcloud auth configure-docker --quiet
@@ -27,10 +27,10 @@ jobs:
         uses: actions/checkout@v2
 
       - name: Build Docker image
-        run: docker build . -t $IMAGE_NAME
+        run: docker build . -t ${{ env.IMAGE_NAME }}
 
       - name: Push Docker image
-        run: docker push $IMAGE_NAME
+        run: docker push ${{ env.IMAGE_NAME }}
 
       - name: Deploy Docker image
-        run: gcloud run deploy tax-management-service-dev --image $IMAGE_NAME --region ${{ secrets.GCP_REGION }} --platform managed --allow-unauthenticated --vpc-connector=tax-mgm-vpc-access --vpc-egress=all-traffic
+        run: gcloud run deploy ${{ env.SERVICE }} --image ${{ env.IMAGE_NAME }} --region ${{ env.REGION }} --platform managed --allow-unauthenticated

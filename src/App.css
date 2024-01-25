@@ -41,3 +41,9 @@ button:disabled {
   background-color: #404940;
   cursor: not-allowed;
 }
+
+.page-container {
+  margin-top: 1rem;
+  margin-left: 1rem;
+  margin-right: 1rem;
+}

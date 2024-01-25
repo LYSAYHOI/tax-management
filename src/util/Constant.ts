@@ -1,6 +1,6 @@
 const ENDPOINT = {
   INVOICE_LIST_API: "/purchase",
-  EXPORT_INVOICE_API: "/export-xml",
+  EXPORT_INVOICE_API: "/export",
 };
 
 const RETRY_URL = ["/export-xml", "/purchase"];

@@ -3,6 +3,7 @@ import { Navigate, Route, Routes } from "react-router-dom";
 import "./App.css";
 import InvoiceManagementComponent from "./component/invoice/InvoiceManagement.component";
 import LoginComponent from "./component/login/Login.component";
+import AppBarComponent from "./component/appbar/AppBar.component";
 
 export default function App() {
   const checkAccessToken = () => {
@@ -10,19 +11,24 @@ export default function App() {
   };
 
   return (
-    <Routes>
-      <Route path="/" element={<Navigate to="/login" />}></Route>
-      <Route path="/login" element={<LoginComponent />}></Route>
-      <Route
-        path="/invoice-management"
-        element={
-          checkAccessToken() ? (
-            <InvoiceManagementComponent />
-          ) : (
-            <Navigate to="/login" />
-          )
-        }
-      ></Route>
-    </Routes>
+    <>
+      <AppBarComponent></AppBarComponent>
+      <div className="page-container">
+        <Routes>
+          <Route path="/" element={<Navigate to="/login" />}></Route>
+          <Route path="/login" element={<LoginComponent />}></Route>
+          <Route
+            path="/invoice-management"
+            element={
+              checkAccessToken() ? (
+                <InvoiceManagementComponent />
+              ) : (
+                <Navigate to="/login" />
+              )
+            }
+          ></Route>
+        </Routes>
+      </div>
+    </>
   );
 }
