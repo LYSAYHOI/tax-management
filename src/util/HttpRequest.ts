@@ -4,6 +4,7 @@ const instance = axios.create({
   // baseURL: `https://tax-management-proxy-service-sxxvb4l3sq-as.a.run.app/query/invoices`,
   // baseURL: `https://hoadondientu.gdt.gov.vn:30000/query/invoices`,
   baseURL: "https://tax-management-server-sxxvb4l3sq-as.a.run.app/query",
+  // baseURL: "http://localhost:8080/query",
   timeout: 1000 * 5
 });
 

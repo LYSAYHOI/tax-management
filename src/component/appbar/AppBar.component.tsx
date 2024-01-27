@@ -7,9 +7,16 @@ import {
   Typography,
 } from "@mui/material";
 import AdbIcon from "@mui/icons-material/Adb";
+import { Link } from "react-router-dom";
 
 export default function AppBarComponent() {
-  const pages = ["Hóa Đơn Điện Tử", "Gộp File Excel Danh Sách Hóa Đơn"];
+  const pages = [
+    { display: "Hóa Đơn Điện Tử", link: "/invoice-management" },
+    {
+      display: "Gộp File Excel Danh Sách Hóa Đơn",
+      link: "/invoices-excel-merge",
+    },
+  ];
   return (
     <AppBar position="static" color="primary">
       <Container maxWidth="xl">
@@ -53,13 +60,14 @@ export default function AppBarComponent() {
           <Box sx={{ flexGrow: 1, display: { xs: "none", md: "flex" } }}>
             {pages.map((page) => (
               <Button
+                component={Link}
                 variant="contained"
                 color="success"
-                key={page}
-                onClick={() => {}}
+                key={page.display}
+                to={page.link}
                 sx={{ mx: 1, color: "white", display: "block" }}
               >
-                {page}
+                {page.display}
               </Button>
             ))}
           </Box>

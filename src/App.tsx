@@ -4,6 +4,7 @@ import "./App.css";
 import InvoiceManagementComponent from "./component/invoice/InvoiceManagement.component";
 import LoginComponent from "./component/login/Login.component";
 import AppBarComponent from "./component/appbar/AppBar.component";
+import ExcelInvoiceMergeComponent from "./component/invoicefilemerge/ExcelInvoiceMerge.component";
 
 export default function App() {
   const checkAccessToken = () => {
@@ -26,6 +27,10 @@ export default function App() {
                 <Navigate to="/login" />
               )
             }
+          ></Route>
+          <Route
+            path="/invoices-excel-merge"
+            element={<ExcelInvoiceMergeComponent />}
           ></Route>
         </Routes>
       </div>
