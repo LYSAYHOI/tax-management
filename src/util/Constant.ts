@@ -1,6 +1,12 @@
 const ENDPOINT = {
-  INVOICE_LIST_API: "/purchase",
-  EXPORT_INVOICE_API: "/export",
+  INVOICE_TAX: {
+    INVOICE_LIST_API: "/query/purchase",
+    EXPORT_INVOICE_API: "/query/export",
+  }, 
+  EXCEL_MERGE: {
+    MERGE: "/excel-merge"
+  }
+
 };
 
 export { ENDPOINT };

@@ -55,7 +55,7 @@ export default function InvoiceManagementComponent() {
     (state: string | undefined) => {
       const from = moment(fromDate, "yyyy-MM-DD");
       const to = moment(toDate, "yyyy-MM-DD");
-      return Get(ENDPOINT.INVOICE_LIST_API, {
+      return Get(ENDPOINT.INVOICE_TAX.INVOICE_LIST_API, {
         sort: "tdlap:desc,khmshdon:asc,shdon:desc",
         size: 50,
         search: `tdlap=ge=${from.format(
@@ -132,7 +132,7 @@ export default function InvoiceManagementComponent() {
     let i = 0;
     for (const invoice of invoiceList) {
       try {
-        const res = await GetFile(ENDPOINT.EXPORT_INVOICE_API, {
+        const res = await GetFile(ENDPOINT.INVOICE_TAX.EXPORT_INVOICE_API, {
           nbmst: invoice.nbmst,
           khhdon: invoice.khhdon,
           shdon: invoice.shdon,
