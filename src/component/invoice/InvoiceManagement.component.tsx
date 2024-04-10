@@ -5,7 +5,14 @@ import { Get, GetFile } from "../../util/HttpRequest";
 import "./InvoiceManagement.style.css";
 import JSZip, { loadAsync } from "jszip";
 import { useNavigate } from "react-router";
-import { Button, CircularProgress, Dialog, DialogActions, DialogContent, DialogTitle } from "@mui/material";
+import {
+  Button,
+  CircularProgress,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
+} from "@mui/material";
 import { AxiosError } from "axios";
 
 type Invoice = {
@@ -23,7 +30,9 @@ type InvoiceData = {
 };
 
 enum InvoiceDownloadStatus {
-  SUCCESS, FAIL, NO_INVOICE
+  SUCCESS,
+  FAIL,
+  NO_INVOICE,
 }
 
 export default function InvoiceManagementComponent() {
@@ -37,21 +46,27 @@ export default function InvoiceManagementComponent() {
   const [toDate, setToDate] = useState(moment().format("yyyy-MM-DD"));
   const [ttxly, setTtxly] = useState<number>(5);
   const [inprogressDownloadNumber, setInprogressDownloadNumber] = useState(0);
-  const [isOpendownloadProgressDialog, setIsOpendownloadProgressDialog] = useState(false);
+  const [isOpendownloadProgressDialog, setIsOpendownloadProgressDialog] =
+    useState(false);
   const [hasDownloadDetail, setHasDownloadDetail] = useState(false);
   const [isLoadingData, setIsLoadingData] = useState(false);
 
   const fetchInvoiceData = (state: string | undefined) => {
     const from = moment(fromDate, "yyyy-MM-DD");
     const to = moment(toDate, "yyyy-MM-DD");
-    return Get(ENDPOINT.INVOICE_LIST_API, {
-      sort: "tdlap:desc,khmshdon:asc,shdon:desc",
-      size: 50,
-      search: `tdlap=ge=${from.format(
-        "DD/MM/yyyy"
-      )}T00:00:00;tdlap=le=${to.format("DD/MM/yyyy")}T23:59:59;ttxly==${ttxly}`,
-      state,
-    });
+    return Get(
+      ttxly == 8 ? ENDPOINT.MTT_INVOICE_LIST_API : ENDPOINT.INVOICE_LIST_API,
+      {
+        sort: "tdlap:desc,khmshdon:asc,shdon:desc",
+        size: 50,
+        search: `tdlap=ge=${from.format(
+          "DD/MM/yyyy"
+        )}T00:00:00;tdlap=le=${to.format(
+          "DD/MM/yyyy"
+        )}T23:59:59;ttxly==${ttxly}`,
+        state,
+      }
+    );
   };
 
   useEffect(() => {
@@ -110,23 +125,39 @@ export default function InvoiceManagementComponent() {
     let i = 0;
     for (const invoice of invoiceList) {
       try {
-        const res = await GetFile(ENDPOINT.EXPORT_INVOICE_API, {
-          nbmst: invoice.nbmst,
-          khhdon: invoice.khhdon,
-          shdon: invoice.shdon,
-          khmshdon: invoice.khmshdon,
-        })
+        const res = await GetFile(
+          ttxly == 8
+            ? ENDPOINT.MTT_EXPORT_INVOICE_API
+            : ENDPOINT.EXPORT_INVOICE_API,
+          {
+            nbmst: invoice.nbmst,
+            khhdon: invoice.khhdon,
+            shdon: invoice.shdon,
+            khmshdon: invoice.khmshdon,
+          }
+        );
         if (res.data) {
           fileDataList.push({ fileData: res.data, invoice });
-          downloadResultRes = { ...downloadResultRes, [`${invoice.khhdon}-${invoice.shdon}`]: InvoiceDownloadStatus.SUCCESS, };
+          downloadResultRes = {
+            ...downloadResultRes,
+            [`${invoice.khhdon}-${invoice.shdon}`]:
+              InvoiceDownloadStatus.SUCCESS,
+          };
         }
       } catch (err) {
         const axiosErr = err as AxiosError;
         if (axiosErr.response?.status === 500) {
-          downloadResultRes = { ...downloadResultRes, [`${invoice.khhdon}-${invoice.shdon}`]: InvoiceDownloadStatus.NO_INVOICE, };
+          downloadResultRes = {
+            ...downloadResultRes,
+            [`${invoice.khhdon}-${invoice.shdon}`]:
+              InvoiceDownloadStatus.NO_INVOICE,
+          };
         } else {
           setHasAnyDownloadFail(true);
-          downloadResultRes = { ...downloadResultRes, [`${invoice.khhdon}-${invoice.shdon}`]: InvoiceDownloadStatus.FAIL, };
+          downloadResultRes = {
+            ...downloadResultRes,
+            [`${invoice.khhdon}-${invoice.shdon}`]: InvoiceDownloadStatus.FAIL,
+          };
         }
       } finally {
         setDownloadResult(downloadResultRes);
@@ -189,7 +220,8 @@ export default function InvoiceManagementComponent() {
   const downloadAllFailed = () => {
     const downloadFailInvoiceList = invoiceData.datas?.filter(
       (invoice) =>
-        downloadResult[`${invoice.khhdon}-${invoice.shdon}`] === InvoiceDownloadStatus.FAIL
+        downloadResult[`${invoice.khhdon}-${invoice.shdon}`] ===
+        InvoiceDownloadStatus.FAIL
     );
     downloadAllFile(downloadFailInvoiceList || []);
   };
@@ -230,15 +262,17 @@ export default function InvoiceManagementComponent() {
         >
           Tải Tất Cả Hóa Đơn
         </button>
-        {hasDownloadDetail && <div>
-          <button
-            className="download-file"
-            type="button"
-            onClick={() => setIsOpendownloadProgressDialog(true)}
-          >
-            Xem chi tiết kết quả tải về
-          </button>
-        </div>}
+        {hasDownloadDetail && (
+          <div>
+            <button
+              className="download-file"
+              type="button"
+              onClick={() => setIsOpendownloadProgressDialog(true)}
+            >
+              Xem chi tiết kết quả tải về
+            </button>
+          </div>
+        )}
         <div>
           <label htmlFor="from">Từ Ngày:</label>
           <input
@@ -262,6 +296,9 @@ export default function InvoiceManagementComponent() {
           <br />
           <input type="radio" id="koma" name="ttxly" value={6} />
           <label htmlFor="koma">Không Mã</label>
+          <br />
+          <input type="radio" id="maytinhtien" name="ttxly" value={8} />
+          <label htmlFor="maytinhtien">Máy Tính Tiền</label>
         </div>
         <div>
           <button className="brown" type="button" onClick={handleSearch}>
@@ -304,53 +341,97 @@ export default function InvoiceManagementComponent() {
               <td>{invoice.khmshdon}</td>
               <td>{new Date(invoice.tdlap).toDateString()}</td>
               <td
-                className={`${(downloadResult[`${invoice.khhdon}-${invoice.shdon}`] ===
-                  InvoiceDownloadStatus.SUCCESS &&
-                  "success") ||
+                className={`${
+                  (downloadResult[`${invoice.khhdon}-${invoice.shdon}`] ===
+                    InvoiceDownloadStatus.SUCCESS &&
+                    "success") ||
                   (downloadResult[`${invoice.khhdon}-${invoice.shdon}`] ===
                     InvoiceDownloadStatus.FAIL &&
                     "fail") ||
                   (downloadResult[`${invoice.khhdon}-${invoice.shdon}`] ==
                     InvoiceDownloadStatus.NO_INVOICE &&
                     "")
-                  }`}
+                }`}
               >
                 {downloadResult[`${invoice.khhdon}-${invoice.shdon}`] ===
-                  InvoiceDownloadStatus.SUCCESS ?
+                InvoiceDownloadStatus.SUCCESS ? (
                   "Thành Công"
-                  : downloadResult[`${invoice.khhdon}-${invoice.shdon}`] ===
-                    InvoiceDownloadStatus.FAIL ? (
-                    <Button variant="outlined" onClick={() => onDownloadSingleFile(invoice)}>
-                      Tải Lại
-                    </Button>
-                  ) : downloadResult[`${invoice.khhdon}-${invoice.shdon}`] ===
-                    InvoiceDownloadStatus.NO_INVOICE ?
-                    "Không hóa đơn" : ""
-                }
+                ) : downloadResult[`${invoice.khhdon}-${invoice.shdon}`] ===
+                  InvoiceDownloadStatus.FAIL ? (
+                  <Button
+                    variant="outlined"
+                    onClick={() => onDownloadSingleFile(invoice)}
+                  >
+                    Tải Lại
+                  </Button>
+                ) : downloadResult[`${invoice.khhdon}-${invoice.shdon}`] ===
+                  InvoiceDownloadStatus.NO_INVOICE ? (
+                  "Không hóa đơn"
+                ) : (
+                  ""
+                )}
               </td>
             </tr>
           ))}
         </tbody>
       </table>
-      {(invoiceData?.total == null || invoiceData?.total === 0) && !isLoadingData && <div className="no-invoice-text">Không tìm thấy hóa đơn nào</div>}
+      {(invoiceData?.total == null || invoiceData?.total === 0) &&
+        !isLoadingData && (
+          <div className="no-invoice-text">Không tìm thấy hóa đơn nào</div>
+        )}
       {isLoadingData && <CircularProgress className="loading-progress" />}
-      <Dialog
-        open={isOpendownloadProgressDialog}
-        maxWidth="sm"
-        fullWidth
-      >
-        <DialogTitle >
-          Thông tin tải về
-        </DialogTitle>
+      <Dialog open={isOpendownloadProgressDialog} maxWidth="sm" fullWidth>
+        <DialogTitle>Thông tin tải về</DialogTitle>
         <DialogContent className="progress-style">
-          <CircularProgress variant="determinate" value={invoiceData.total ? inprogressDownloadNumber / invoiceData.total * 100 : 0} />
-          <span>Tải thành công {Object.values(downloadResult).filter((result) => result === InvoiceDownloadStatus.SUCCESS).length} / {invoiceData.total || 0} files</span>
-          <span>Tải lỗi {Object.values(downloadResult).filter((result) => result === InvoiceDownloadStatus.FAIL).length} files</span>
-          <span>Không có hóa đơn {Object.values(downloadResult).filter((result) => result === InvoiceDownloadStatus.NO_INVOICE).length} files</span>
+          <CircularProgress
+            variant="determinate"
+            value={
+              invoiceData.total
+                ? (inprogressDownloadNumber / invoiceData.total) * 100
+                : 0
+            }
+          />
+          <span>
+            Tải thành công{" "}
+            {
+              Object.values(downloadResult).filter(
+                (result) => result === InvoiceDownloadStatus.SUCCESS
+              ).length
+            }{" "}
+            / {invoiceData.total || 0} files
+          </span>
+          <span>
+            Tải lỗi{" "}
+            {
+              Object.values(downloadResult).filter(
+                (result) => result === InvoiceDownloadStatus.FAIL
+              ).length
+            }{" "}
+            files
+          </span>
+          <span>
+            Không có hóa đơn{" "}
+            {
+              Object.values(downloadResult).filter(
+                (result) => result === InvoiceDownloadStatus.NO_INVOICE
+              ).length
+            }{" "}
+            files
+          </span>
         </DialogContent>
         <DialogActions>
-          {hasAnyDownloadFail && <Button color="error" variant="contained" onClick={downloadAllFailed}>Tải lại hóa đơn lỗi</Button>}
-          <Button onClick={() => setIsOpendownloadProgressDialog(false)}>Đóng</Button>
+          {hasAnyDownloadFail && (
+            <Button
+              color="error"
+              variant="contained"
+              onClick={downloadAllFailed}
+            >
+              Tải lại hóa đơn lỗi
+            </Button>
+          )}
+          <Button onClick={() => setIsOpendownloadProgressDialog(false)}>
+            Đóng
+          </Button>
         </DialogActions>
       </Dialog>
     </>

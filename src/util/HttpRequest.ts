@@ -1,7 +1,7 @@
 import axios, { AxiosError } from "axios";
 
 const instance = axios.create({
-  baseURL: `https://tax-management-proxy-service-sxxvb4l3sq-as.a.run.app/query/invoices`,
+  baseURL: `https://tax-management-proxy-service-sxxvb4l3sq-as.a.run.app`,
   // baseURL: `https://hoadondientu.gdt.gov.vn:30000/query/invoices`,
   // baseURL: "http://localhost:8080/query/invoices",
   timeout: 1000 * 5
