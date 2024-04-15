@@ -28,6 +28,7 @@ export default function InvoiceFileListComponent() {
 
   return (
     <div className="container">
+      <h3>*Lưu ý: Nhập Mã từ trang thuế trước khi tải file</h3>
       <span className="month-span">Tháng</span>
       <ButtonGroup variant="outlined">
         <Button
