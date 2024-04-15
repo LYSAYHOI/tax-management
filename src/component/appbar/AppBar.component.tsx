@@ -16,6 +16,10 @@ export default function AppBarComponent() {
       display: "Gộp File Excel Danh Sách Hóa Đơn",
       link: "/invoices-excel-merge",
     },
+    {
+      display: "Tải File gộp",
+      link: "/invoices-list",
+    },
   ];
   return (
     <AppBar position="static" color="primary">

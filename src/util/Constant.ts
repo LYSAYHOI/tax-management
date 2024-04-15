@@ -5,6 +5,9 @@ const ENDPOINT = {
   }, 
   EXCEL_MERGE: {
     MERGE: "/excel-merge"
+  },
+  INVOICE: {
+    MERGE_FILE: "/invoice/merge-list"
   }
 
 };

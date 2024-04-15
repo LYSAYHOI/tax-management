@@ -13,7 +13,7 @@ jobs:
       PROJECT_ID: ${{ vars.GCP_PROJECT_ID }} # TODO: update Google Cloud project id
       SERVICE: ${{ vars.GCP_CR_SERVICE_NAME }} # TODO: update Cloud Run service name
       REGION: ${{ vars.GCP_REGION }} # TODO: update Cloud Run service region
-      IMAGE_NAME: gcr.io/${{ vars.GCP_PROJECT_ID }}/${{ vars.GCP_APP_NAME }}
+      IMAGE_NAME: asia-docker.pkg.dev/${{ vars.GCP_PROJECT_ID }}/asia.gcr.io/${{ vars.GCP_APP_NAME }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v2
@@ -24,7 +24,7 @@ jobs:
           credentials_json: "${{ secrets.GCP_CREDENTIALS_JSON }}"
 
       - name: Configure Docker
-        run: gcloud auth configure-docker --quiet
+        run: gcloud auth configure-docker asia-docker.pkg.dev --quiet
 
       - name: Build Docker image
         run: docker build . -t ${{ env.IMAGE_NAME }}
