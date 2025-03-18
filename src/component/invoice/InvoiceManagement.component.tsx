@@ -2,6 +2,7 @@ import moment from "moment";
 import { useCallback, useEffect, useState } from "react";
 import { ENDPOINT } from "../../util/Constant";
 import { Get, GetFile } from "../../util/HttpRequest";
+import "./InvoiceManagement.style.css";
 import JSZip, { loadAsync } from "jszip";
 import { useNavigate } from "react-router";
 import {
@@ -55,19 +56,28 @@ export default function InvoiceManagementComponent() {
     (state: string | undefined) => {
       const from = moment(fromDate, "yyyy-MM-DD");
       const to = moment(toDate, "yyyy-MM-DD");
-      return Get(ENDPOINT.INVOICE_TAX.INVOICE_LIST_API, {
-        sort: "tdlap:desc,khmshdon:asc,shdon:desc",
-        size: 50,
-        search: `tdlap=ge=${from.format(
-          "DD/MM/yyyy"
-        )}T00:00:00;tdlap=le=${to.format(
-          "DD/MM/yyyy"
-        )}T23:59:59;ttxly==${ttxly}`,
-        state,
-      });
+      return Get(
+        ttxly == 8
+          ? ENDPOINT.INVOICE_TAX.MTT_INVOICE_LIST_API
+          : ENDPOINT.INVOICE_TAX.INVOICE_LIST_API,
+        {
+          sort: "tdlap:desc,khmshdon:asc,shdon:desc",
+          size: 50,
+          search: `tdlap=ge=${from.format(
+            "DD/MM/yyyy"
+          )}T00:00:00;tdlap=le=${to.format(
+            "DD/MM/yyyy"
+          )}T23:59:59;ttxly==${ttxly}`,
+          state,
+        }
+      );
     },
     [fromDate, toDate, ttxly]
   );
+
+  useEffect(() => {
+    fetchAllInvoice([], undefined, 0);
+  }, []);
 
   const downloadFile = (fileContent: any, filename: string) => {
     const blob = new Blob([fileContent], { type: "application/zip" });
@@ -132,12 +142,17 @@ export default function InvoiceManagementComponent() {
     let i = 0;
     for (const invoice of invoiceList) {
       try {
-        const res = await GetFile(ENDPOINT.INVOICE_TAX.EXPORT_INVOICE_API, {
-          nbmst: invoice.nbmst,
-          khhdon: invoice.khhdon,
-          shdon: invoice.shdon,
-          khmshdon: invoice.khmshdon,
-        });
+        const res = await GetFile(
+          ttxly == 8
+            ? ENDPOINT.INVOICE_TAX.MTT_EXPORT_INVOICE_API
+            : ENDPOINT.INVOICE_TAX.EXPORT_INVOICE_API,
+          {
+            nbmst: invoice.nbmst,
+            khhdon: invoice.khhdon,
+            shdon: invoice.shdon,
+            khmshdon: invoice.khmshdon,
+          }
+        );
         if (res.data) {
           fileDataList.push({ fileData: res.data, invoice });
           downloadResultRes = {
@@ -298,6 +313,9 @@ export default function InvoiceManagementComponent() {
           <br />
           <input type="radio" id="koma" name="ttxly" value={6} />
           <label htmlFor="koma">Không Mã</label>
+          <br />
+          <input type="radio" id="maytinhtien" name="ttxly" value={8} />
+          <label htmlFor="maytinhtien">Máy Tính Tiền</label>
         </div>
         <div>
           <button className="brown" type="button" onClick={handleSearch}>
