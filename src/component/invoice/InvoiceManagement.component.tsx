@@ -1,7 +1,7 @@
 import moment from "moment";
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { ENDPOINT } from "../../util/Constant";
-import { Get, GetFile } from "../../util/HttpRequest";
+import { BASE_URL, Get, GetFile, GetFileNew } from "../../util/HttpRequest";
 import "./InvoiceManagement.style.css";
 import JSZip, { loadAsync } from "jszip";
 import { useNavigate } from "react-router";
@@ -129,6 +129,27 @@ export default function InvoiceManagementComponent() {
     setHasDownloadDetail(true);
   };
 
+  const downloadAllNewMethod = async () => {
+    const payload = (invoiceData.datas || []).map((i: Invoice) => ({
+      index: i.index,
+      shdon: i.shdon,
+      khhdon: i.khhdon,
+      url: createDonwloadUrl(i),
+    }));
+    const res = await GetFileNew(payload);
+    downloadFile(res, "invoice-all.zip");
+  };
+
+  const createDonwloadUrl = (invoice: Invoice) => {
+    return `${BASE_URL}${
+      ttxly === 8
+        ? ENDPOINT.INVOICE_TAX.MTT_EXPORT_INVOICE_API
+        : ENDPOINT.INVOICE_TAX.EXPORT_INVOICE_API
+    }?nbmst=${invoice.nbmst}&khhdon=${invoice.khhdon}&shdon=${
+      invoice.shdon
+    }&khmshdon=${invoice.khmshdon}`;
+  };
+
   const downloadAllFile = async (invoiceList: Invoice[]) => {
     setDownloadResult({});
     const fileDataList: any[] = [];
@@ -137,7 +158,7 @@ export default function InvoiceManagementComponent() {
     for (const invoice of invoiceList) {
       try {
         const res = await GetFile(
-          ttxly == 8
+          ttxly === 8
             ? ENDPOINT.INVOICE_TAX.MTT_EXPORT_INVOICE_API
             : ENDPOINT.INVOICE_TAX.EXPORT_INVOICE_API,
           {
@@ -274,6 +295,13 @@ export default function InvoiceManagementComponent() {
         >
           Tải Tất Cả Hóa Đơn
         </button>
+        <button
+          className="download-file"
+          type="button"
+          onClick={downloadAllNewMethod}
+        >
+          Tải Tất Cả Hóa Đơn (Mới)
+        </button>
         {hasDownloadDetail && (
           <div>
             <button
@@ -343,7 +371,7 @@ export default function InvoiceManagementComponent() {
         </thead>
         <tbody>
           {(invoiceData.datas || []).map((invoice: any, index) => (
-            <tr key={`${invoice.khhdon}-${invoice.shdon}`}>
+            <tr key={`${invoice.index}-${invoice.khhdon}-${invoice.shdon}`}>
               {/* <td>{index + 1 + currentPage * 50}</td> */}
               <td>{index + 1}</td>
               <td>{invoice.nbmst}</td>
