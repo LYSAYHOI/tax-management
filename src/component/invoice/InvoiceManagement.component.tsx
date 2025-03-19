@@ -52,30 +52,28 @@ export default function InvoiceManagementComponent() {
   const [hasDownloadDetail, setHasDownloadDetail] = useState(false);
   const [isLoadingData, setIsLoadingData] = useState(false);
 
-  const fetchInvoiceData = useCallback(
-    (state: string | undefined) => {
-      const from = moment(fromDate, "yyyy-MM-DD");
-      const to = moment(toDate, "yyyy-MM-DD");
-      return Get(
-        ttxly == 8
-          ? ENDPOINT.INVOICE_TAX.MTT_INVOICE_LIST_API
-          : ENDPOINT.INVOICE_TAX.INVOICE_LIST_API,
-        {
-          sort: "tdlap:desc,khmshdon:asc,shdon:desc",
-          size: 50,
-          search: `tdlap=ge=${from.format(
-            "DD/MM/yyyy"
-          )}T00:00:00;tdlap=le=${to.format(
-            "DD/MM/yyyy"
-          )}T23:59:59;ttxly==${ttxly}`,
-          state,
-        }
-      );
-    },
-    [fromDate, toDate, ttxly]
-  );
+  const fetchInvoiceData = (state: string | undefined) => {
+    const from = moment(fromDate, "yyyy-MM-DD");
+    const to = moment(toDate, "yyyy-MM-DD");
+    return Get(
+      ttxly == 8
+        ? ENDPOINT.INVOICE_TAX.MTT_INVOICE_LIST_API
+        : ENDPOINT.INVOICE_TAX.INVOICE_LIST_API,
+      {
+        sort: "tdlap:desc,khmshdon:asc,shdon:desc",
+        size: 50,
+        search: `tdlap=ge=${from.format(
+          "DD/MM/yyyy"
+        )}T00:00:00;tdlap=le=${to.format(
+          "DD/MM/yyyy"
+        )}T23:59:59;ttxly==${ttxly}`,
+        state,
+      }
+    );
+  };
 
   useEffect(() => {
+    setIsLoadingData(true);
     fetchAllInvoice([], undefined, 0);
   }, []);
 
@@ -90,44 +88,40 @@ export default function InvoiceManagementComponent() {
     document.body.removeChild(link);
   };
 
-  const fetchAllInvoice = useCallback(
-    async (
-      invoiceList: any[],
-      state: string | undefined,
-      page: number // page start from 0
-    ) => {
-      try {
-        setIsLoadingData(true);
-        const res = await fetchInvoiceData(state);
-        const {
-          datas: dataRes,
-          state: stateRes,
+  const fetchAllInvoice = async (
+    invoiceList: any[],
+    state: string | undefined,
+    page: number // page start from 0
+  ) => {
+    try {
+      const res = await fetchInvoiceData(state);
+      const {
+        datas: dataRes,
+        state: stateRes,
+        total: totalRes,
+      } = res.data as InvoiceData;
+      const dataResMapIndex = dataRes?.map((data, index) => ({
+        ...data,
+        index: page * 50 + index + 1,
+      }));
+      invoiceList.push(...(dataResMapIndex || []));
+      if (stateRes) {
+        fetchAllInvoice(invoiceList, stateRes, page + 1);
+      } else {
+        setInvoiceData({
+          datas: [...invoiceList],
           total: totalRes,
-        } = res.data as InvoiceData;
-        const dataResMapIndex = dataRes?.map((data, index) => ({
-          ...data,
-          index: page * 50 + index + 1,
-        }));
-        invoiceList.push(...(dataResMapIndex || []));
-        if (stateRes) {
-          fetchAllInvoice(invoiceList, stateRes, page + 1);
-        } else {
-          setInvoiceData({
-            datas: [...invoiceList],
-            total: totalRes,
-          });
-        }
-      } catch {
-      } finally {
+        });
         setIsLoadingData(false);
       }
-    },
-    [fetchInvoiceData]
-  );
+    } catch {
+      setIsLoadingData(false);
+    }
+  };
 
   useEffect(() => {
     fetchAllInvoice([], undefined, 0);
-  }, [fetchAllInvoice]);
+  }, []);
 
   const downloadAllFileInAllPages = () => {
     downloadAllFile(invoiceData.datas || []);
@@ -252,6 +246,7 @@ export default function InvoiceManagementComponent() {
   };
 
   const handleSearch = () => {
+    setIsLoadingData(true);
     setDownloadResult({});
     setHasAnyDownloadFail(false);
     setInvoiceData({});
