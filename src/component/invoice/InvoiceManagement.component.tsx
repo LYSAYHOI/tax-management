@@ -15,6 +15,8 @@ import {
 } from "@mui/material";
 import { AxiosError } from "axios";
 import "./InvoiceManagement.style.css";
+import "react-datepicker/dist/react-datepicker.css";
+import DatePicker from "react-datepicker";
 
 type Invoice = {
   index?: number;
@@ -41,10 +43,10 @@ export default function InvoiceManagementComponent() {
   const [invoiceData, setInvoiceData] = useState<InvoiceData>({});
   const [downloadResult, setDownloadResult] = useState<any>({});
   const [hasAnyDownloadFail, setHasAnyDownloadFail] = useState<boolean>(false);
-  const [fromDate, setFromDate] = useState(
-    moment().subtract(1, "months").format("yyyy-MM-DD")
+  const [fromDate, setFromDate] = useState<Date | null>(
+    moment().subtract(1, "months").toDate()
   );
-  const [toDate, setToDate] = useState(moment().format("yyyy-MM-DD"));
+  const [toDate, setToDate] = useState<Date | null>(moment().toDate());
   const [ttxly, setTtxly] = useState<number>(5);
   const [inprogressDownloadNumber, setInprogressDownloadNumber] = useState(0);
   const [isOpendownloadProgressDialog, setIsOpendownloadProgressDialog] =
@@ -125,8 +127,8 @@ export default function InvoiceManagementComponent() {
 
   const downloadAllFileInAllPages = () => {
     downloadAllFile(invoiceData.datas || []);
-    setIsOpendownloadProgressDialog(true);
     setHasDownloadDetail(true);
+    setIsOpendownloadProgressDialog(true);
   };
 
   const downloadAllNewMethod = async () => {
@@ -142,7 +144,7 @@ export default function InvoiceManagementComponent() {
 
   const createDonwloadUrl = (invoice: Invoice) => {
     return `${BASE_URL}${
-      ttxly === 8
+      ttxly == 8
         ? ENDPOINT.INVOICE_TAX.MTT_EXPORT_INVOICE_API
         : ENDPOINT.INVOICE_TAX.EXPORT_INVOICE_API
     }?nbmst=${invoice.nbmst}&khhdon=${invoice.khhdon}&shdon=${
@@ -158,7 +160,7 @@ export default function InvoiceManagementComponent() {
     for (const invoice of invoiceList) {
       try {
         const res = await GetFile(
-          ttxly === 8
+          ttxly == 8
             ? ENDPOINT.INVOICE_TAX.MTT_EXPORT_INVOICE_API
             : ENDPOINT.INVOICE_TAX.EXPORT_INVOICE_API,
           {
@@ -258,12 +260,18 @@ export default function InvoiceManagementComponent() {
     downloadAllFile(downloadFailInvoiceList || []);
   };
 
-  const onChangeFromDate = (e: any) => {
-    setFromDate(e.target.value);
+  const onChangeFromDate = (date: Date | null) => {
+    setFromDate(date);
+    if (
+      date &&
+      moment(date).startOf("day").isSame(moment(date).startOf("month"))
+    ) {
+      setToDate(moment(date).endOf("month").startOf("day").toDate());
+    }
   };
 
-  const onChangeToDate = (e: any) => {
-    setToDate(e.target.value);
+  const onChangeToDate = (date: Date | null) => {
+    setToDate(date);
   };
 
   const handleSearch = () => {
@@ -314,21 +322,19 @@ export default function InvoiceManagementComponent() {
           </div>
         )}
         <div>
-          <label htmlFor="from">Từ Ngày:</label>
-          <input
-            type="date"
-            name="from"
-            value={fromDate}
+          <label htmlFor="from">Từ Ngày: </label>
+          <DatePicker
+            selected={fromDate}
             onChange={onChangeFromDate}
+            dateFormat="dd/MM/yyyy"
           />
-          <span className="no-wrap">{`     `}</span>
-          <label htmlFor="to">Tới Ngày:</label>
-          <input
-            type="date"
-            name="to"
-            value={toDate}
+          <br />
+          <label htmlFor="to">Tới Ngày: </label>
+          <DatePicker
+            selected={toDate}
             onChange={onChangeToDate}
-          ></input>
+            dateFormat="dd/MM/yyyy"
+          />
         </div>
         <div onChange={onRadioButtonChange}>
           <input type="radio" id="coma" name="ttxly" value={5} defaultChecked />
