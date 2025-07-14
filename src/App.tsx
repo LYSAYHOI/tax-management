@@ -6,6 +6,7 @@ import LoginComponent from "./component/login/Login.component";
 import AppBarComponent from "./component/appbar/AppBar.component";
 import ExcelInvoiceMergeComponent from "./component/invoicefilemerge/ExcelInvoiceMerge.component";
 import InvoiceFileListComponent from "./component/invoicefilelist/InvoiceFileList.component";
+import InvoiceDetailComponent from "./component/invoiceextract/InvoiceDetail.component";
 
 export default function App() {
   const checkAccessToken = () => {
@@ -36,6 +37,10 @@ export default function App() {
           <Route
             path="/invoices-list"
             element={<InvoiceFileListComponent />}
+          ></Route>
+          <Route
+            path="/detail"
+            element={<InvoiceDetailComponent />}
           ></Route>
         </Routes>
       </div>

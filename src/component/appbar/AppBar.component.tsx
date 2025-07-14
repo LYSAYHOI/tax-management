@@ -7,19 +7,13 @@ import {
   Typography,
 } from "@mui/material";
 import AdbIcon from "@mui/icons-material/Adb";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 
 export default function AppBarComponent() {
+  const location = useLocation();
   const pages = [
     { display: "Hóa Đơn Điện Tử", link: "/invoice-management" },
-    {
-      display: "Gộp File Excel Danh Sách Hóa Đơn",
-      link: "/invoices-excel-merge",
-    },
-    {
-      display: "Tải File gộp",
-      link: "/invoices-list",
-    },
+    { display: "Lấy dữ liệu", link: "/detail" },
   ];
   return (
     <AppBar position="static" color="primary">
@@ -66,10 +60,20 @@ export default function AppBarComponent() {
               <Button
                 component={Link}
                 variant="contained"
-                color="success"
+                color={location.pathname === page.link ? "primary" : "success"}
                 key={page.display}
                 to={page.link}
-                sx={{ mx: 1, color: "white", display: "block" }}
+                sx={{ 
+                  mx: 1, 
+                  color: "white", 
+                  display: "block",
+                  ...(location.pathname === page.link && {
+                    backgroundColor: "primary.dark",
+                    fontWeight: "bold",
+                    transform: "scale(1.05)",
+                    boxShadow: "0 4px 8px rgba(0,0,0,0.3)"
+                  })
+                }}
               >
                 {page.display}
               </Button>

@@ -9,7 +9,8 @@ const ENDPOINT = {
     MERGE: "/excel-merge"
   },
   INVOICE: {
-    MERGE_FILE: "/invoice/merge-list"
+    MERGE_FILE: "/invoice/merge-list",
+    DETAIL: "/invoice/extract-xml-data",
   }
 
 };
