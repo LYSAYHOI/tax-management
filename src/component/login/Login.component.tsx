@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { TextField } from "@mui/material";
 import "./Login.style.css";
 
 export default function LoginComponent() {
@@ -34,7 +35,15 @@ export default function LoginComponent() {
   return (
     <div className="center">
       <h2>Nhập mã từ trang thuế</h2>
-      <input type="text" value={token} onChange={onChangeTokenInput} />
+      <TextField
+        type="text"
+        value={token}
+        onChange={onChangeTokenInput}
+        variant="outlined"
+        placeholder="Nhập mã token"
+        fullWidth
+        margin="normal"
+      />
       <button onClick={onClickStartUsing}>Bắt đầu sử dụng</button>
       <p>
         Note: Copy mã code dưới vào console của trang thuế để lấy mã{" "}
