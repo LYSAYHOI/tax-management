@@ -136,8 +136,8 @@ export default function InvoiceManagementComponent() {
 
   const downloadAllFileInAllPages = () => {
     downloadAllFile(invoiceData.datas || []);
-    setIsOpendownloadProgressDialog(true);
     setHasDownloadDetail(true);
+    setIsOpendownloadProgressDialog(true);
   };
 
   const downloadAllFile = async (invoiceList: Invoice[]) => {
@@ -390,7 +390,7 @@ export default function InvoiceManagementComponent() {
         </thead>
         <tbody>
           {(invoiceData.datas || []).map((invoice: any, index) => (
-            <tr key={`${invoice.khhdon}-${invoice.shdon}`}>
+            <tr key={`${invoice.index}-${invoice.khhdon}-${invoice.shdon}`}>
               {/* <td>{index + 1 + currentPage * 50}</td> */}
               <td>{index + 1}</td>
               <td>{invoice.nbmst}</td>

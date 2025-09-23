@@ -36,6 +36,11 @@ const GetFile = (url: string, params: any) => {
     })
     .catch((err: AxiosError) => handleUnauthorizationError(err));
 };
+const GetFileNew = (payload: any) => {
+  return axios.post("http://localhost:8080/invoice-api/download-all", payload, { responseType: "arraybuffer", headers: { ...getAuthorizationHeader() } }).catch((err: AxiosError) =>
+    handleUnauthorizationError(err)
+  );
+};
 
 const GetFileWithFormData = (url: string, formData: FormData) => {
   return instance.post(url, formData, {
@@ -81,4 +86,4 @@ const GetFormData = (url: string, formData: FormData) => {
   });
 };
 
-export { Get, GetFile, GetFileWithFormData, PostFileWithFormData };
+export { Get, GetFile, GetFileWithFormData, PostFileWithFormData, GetFileNew };
