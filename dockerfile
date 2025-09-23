@@ -7,7 +7,7 @@ RUN yarn run build
 
 # server environment
 FROM nginx:1.25.3-alpine
-COPY ./nginx/nginx.conf /etc/nginx/conf.d/configfile.template
+COPY ./nginx/tax-management.conf /etc/nginx/conf.d/configfile.template
 COPY --from=build /react-app/build /usr/share/nginx/html
 
 ENV PORT 8080
