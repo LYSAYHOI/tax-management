@@ -3,9 +3,10 @@ import axios, { AxiosError } from "axios";
 const instance = axios.create({
   // baseURL: `https://tax-management-proxy-service-sxxvb4l3sq-as.a.run.app/query/invoices`,
   // baseURL: `https://hoadondientu.gdt.gov.vn:30000/query/invoices`,
+  // baseURL: `http://localhost:8080`,
   // baseURL: "https://tax-management-server-sxxvb4l3sq-as.a.run.app",
-  baseURL: "http://51.79.173.142:30001/api",
-  timeout: 1000 * 15
+  baseURL: "http://51.79.173.142:30001",
+  timeout: 1000 * 15,
 });
 
 const getAuthorizationHeader = () => ({

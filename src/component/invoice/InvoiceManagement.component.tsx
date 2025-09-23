@@ -1,5 +1,5 @@
 import moment from "moment";
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { ENDPOINT } from "../../util/Constant";
 import { Get, GetFile } from "../../util/HttpRequest";
 import "./InvoiceManagement.style.css";
@@ -12,7 +12,17 @@ import {
   DialogActions,
   DialogContent,
   DialogTitle,
+  FormControl,
+  InputLabel,
+  MenuItem,
+  Select,
+  SelectChangeEvent,
+  TextField,
 } from "@mui/material";
+import { DatePicker } from "@mui/x-date-pickers/DatePicker";
+import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
+import { AdapterMoment } from "@mui/x-date-pickers/AdapterMoment";
+import { Moment } from "moment";
 import { AxiosError } from "axios";
 import "./InvoiceManagement.style.css";
 
@@ -38,14 +48,16 @@ enum InvoiceDownloadStatus {
 
 export default function InvoiceManagementComponent() {
   const navigate = useNavigate();
+  const MAX_DATE_RANGE_DAYS = 30; // Maximum allowed days between from-date and to-date
   const [invoiceData, setInvoiceData] = useState<InvoiceData>({});
   const [downloadResult, setDownloadResult] = useState<any>({});
   const [hasAnyDownloadFail, setHasAnyDownloadFail] = useState<boolean>(false);
-  const [fromDate, setFromDate] = useState(
-    moment().subtract(1, "months").format("yyyy-MM-DD")
+  const [fromDate, setFromDate] = useState<Moment>(
+    moment().subtract(30, "days")
   );
-  const [toDate, setToDate] = useState(moment().format("yyyy-MM-DD"));
+  const [toDate, setToDate] = useState<Moment>(moment());
   const [ttxly, setTtxly] = useState<number>(5);
+  const [taxCode, setTaxCode] = useState<string>("");
   const [inprogressDownloadNumber, setInprogressDownloadNumber] = useState(0);
   const [isOpendownloadProgressDialog, setIsOpendownloadProgressDialog] =
     useState(false);
@@ -53,8 +65,7 @@ export default function InvoiceManagementComponent() {
   const [isLoadingData, setIsLoadingData] = useState(false);
 
   const fetchInvoiceData = (state: string | undefined) => {
-    const from = moment(fromDate, "yyyy-MM-DD");
-    const to = moment(toDate, "yyyy-MM-DD");
+    const taxCodeFilter = taxCode && taxCode.trim() ? `;nbmst==${taxCode}` : '';
     return Get(
       ttxly == 8
         ? ENDPOINT.INVOICE_TAX.MTT_INVOICE_LIST_API
@@ -62,11 +73,11 @@ export default function InvoiceManagementComponent() {
       {
         sort: "tdlap:desc,khmshdon:asc,shdon:desc",
         size: 50,
-        search: `tdlap=ge=${from.format(
+        search: `tdlap=ge=${fromDate.format(
           "DD/MM/yyyy"
-        )}T00:00:00;tdlap=le=${to.format(
+        )}T00:00:00;tdlap=le=${toDate.format(
           "DD/MM/yyyy"
-        )}T23:59:59;ttxly==${ttxly}`,
+        )}T23:59:59${taxCodeFilter};ttxly==${ttxly}`,
         state,
       }
     );
@@ -237,12 +248,26 @@ export default function InvoiceManagementComponent() {
     downloadAllFile(downloadFailInvoiceList || []);
   };
 
-  const onChangeFromDate = (e: any) => {
-    setFromDate(e.target.value);
+  const onChangeFromDate = (newValue: Moment | null) => {
+    if (newValue) {
+      setFromDate(newValue);
+      // If the current toDate is more than MAX_DATE_RANGE_DAYS from the new fromDate, adjust it
+      if (toDate.diff(newValue, 'days') > MAX_DATE_RANGE_DAYS) {
+        setToDate(newValue.clone().add(MAX_DATE_RANGE_DAYS, 'days'));
+      }
+    }
   };
 
-  const onChangeToDate = (e: any) => {
-    setToDate(e.target.value);
+  const onChangeToDate = (newValue: Moment | null) => {
+    if (newValue) {
+      setToDate(newValue);
+    }
+  };
+
+  // Function to check if a date should be disabled in the to-date picker
+  const shouldDisableToDate = (date: Moment) => {
+    // Disable dates that are more than MAX_DATE_RANGE_DAYS after the from date
+    return date.diff(fromDate, 'days') > MAX_DATE_RANGE_DAYS;
   };
 
   const handleSearch = () => {
@@ -256,8 +281,12 @@ export default function InvoiceManagementComponent() {
     setHasDownloadDetail(false);
   };
 
-  const onRadioButtonChange = (e: any) => {
-    setTtxly(e.target.value);
+  const onSelectChange = (e: SelectChangeEvent<number>) => {
+    setTtxly(Number(e.target.value));
+  };
+
+  const onTaxCodeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setTaxCode(e.target.value);
   };
 
   const onDownloadSingleFile = (invoice: Invoice) => {
@@ -265,54 +294,72 @@ export default function InvoiceManagementComponent() {
   };
 
   return (
-    <>
+    <LocalizationProvider dateAdapter={AdapterMoment}>
       <div className="control-pane">
-        <button
-          className="download-file"
-          type="button"
-          onClick={() => downloadAllFileInAllPages()}
-        >
-          Tải Tất Cả Hóa Đơn
-        </button>
-        {hasDownloadDetail && (
-          <div>
+        <div className="date-section">
+          <DatePicker
+            label="Từ Ngày"
+            value={fromDate}
+            onChange={onChangeFromDate}
+            format="DD/MM/YYYY"
+          />
+          <span className="date-separator">-</span>
+          <DatePicker
+            label="Tới Ngày"
+            value={toDate}
+            onChange={onChangeToDate}
+            format="DD/MM/YYYY"
+            shouldDisableDate={shouldDisableToDate}
+            minDate={fromDate}
+            maxDate={fromDate.clone().add(MAX_DATE_RANGE_DAYS, 'days')}
+          />
+        </div>
+        <div className="select-section">
+          <FormControl fullWidth>
+            <InputLabel id="ttxly-label">Loại hóa đơn</InputLabel>
+            <Select
+              labelId="ttxly-label"
+              id="ttxly"
+              name="ttxly"
+              value={ttxly}
+              label="Loại hóa đơn"
+              onChange={onSelectChange}
+            >
+              <MenuItem value={5}>Có Mã</MenuItem>
+              <MenuItem value={6}>Không Mã</MenuItem>
+              <MenuItem value={8}>Máy Tính Tiền</MenuItem>
+            </Select>
+          </FormControl>
+        </div>
+        <div className="tax-code-section">
+          <TextField
+            label="MST người bán"
+            value={taxCode}
+            onChange={onTaxCodeChange}
+            variant="outlined"
+            size="medium"
+            fullWidth
+          />
+        </div>
+      </div>
+      <div className="actions-download-container">
+        <div className="download-section">
+          <button
+            type="button"
+            onClick={() => downloadAllFileInAllPages()}
+          >
+            Tải Tất Cả Hóa Đơn
+          </button>
+          {hasDownloadDetail && (
             <button
-              className="download-file"
               type="button"
               onClick={() => setIsOpendownloadProgressDialog(true)}
             >
               Xem chi tiết kết quả tải về
             </button>
-          </div>
-        )}
-        <div>
-          <label htmlFor="from">Từ Ngày:</label>
-          <input
-            type="date"
-            name="from"
-            value={fromDate}
-            onChange={onChangeFromDate}
-          />
-          <span className="no-wrap">{`     `}</span>
-          <label htmlFor="to">Tới Ngày:</label>
-          <input
-            type="date"
-            name="to"
-            value={toDate}
-            onChange={onChangeToDate}
-          ></input>
+          )}
         </div>
-        <div onChange={onRadioButtonChange}>
-          <input type="radio" id="coma" name="ttxly" value={5} defaultChecked />
-          <label htmlFor="coma">Có Mã</label>
-          <br />
-          <input type="radio" id="koma" name="ttxly" value={6} />
-          <label htmlFor="koma">Không Mã</label>
-          <br />
-          <input type="radio" id="maytinhtien" name="ttxly" value={8} />
-          <label htmlFor="maytinhtien">Máy Tính Tiền</label>
-        </div>
-        <div>
+        <div className="action-section">
           <button className="brown" type="button" onClick={handleSearch}>
             Tìm Kiếm
           </button>
@@ -446,6 +493,6 @@ export default function InvoiceManagementComponent() {
           </Button>
         </DialogActions>
       </Dialog>
-    </>
+    </LocalizationProvider>
   );
 }
