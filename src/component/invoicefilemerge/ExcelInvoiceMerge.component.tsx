@@ -1,4 +1,4 @@
-import { Button } from "@mui/material";
+import { Button, TextField } from "@mui/material";
 import { useMemo, useState } from "react";
 import { useDropzone } from "react-dropzone";
 import "./ExcelInvoiceMerge.style.css";
@@ -35,6 +35,7 @@ const rejectStyle = {
 
 export default function ExcelInvoiceMergeComponent() {
   const [files, setFiles] = useState<File[]>([]);
+  const [startRow, setStartRow] = useState<number>(1);
 
   const { getRootProps, getInputProps, isFocused, isDragAccept, isDragReject } =
     useDropzone({
@@ -75,6 +76,21 @@ export default function ExcelInvoiceMergeComponent() {
           <strong>Hướng dẫn:</strong> Chọn nhiều file Excel (.xlsx, .xls) cùng lúc bằng cách 
           kéo thả hoặc nhấp vào vùng bên dưới, sau đó nhấn nút "Ghép" để tạo file tổng hợp.
         </p>
+      </div>
+      <div style={{ marginBottom: '20px' }}>
+        <TextField
+          label="Dòng bắt đầu sao chép"
+          type="number"
+          value={startRow}
+          onChange={(e) => setStartRow(Number(e.target.value))}
+          variant="outlined"
+          size="small"
+          slotProps={{
+            htmlInput: { min: 1 }
+          }}
+          helperText="Nhập số dòng bắt đầu sao chép dữ liệu (mặc định: 1)"
+          style={{ width: '300px' }}
+        />
       </div>
       <div {...getRootProps({ style })}>
         <input {...getInputProps()} />

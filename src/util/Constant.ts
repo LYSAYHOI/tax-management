@@ -10,13 +10,12 @@ const ENDPOINT = {
     MTT_EXPORT_INVOICE_API: ENDPOINT_VERSION.V1 + "/sco-query/invoices/export-xml",
   }, 
   EXCEL_MERGE: {
-    MERGE: "/excel-merge"
+    MERGE: ENDPOINT_VERSION.V2 + "/excel-merge"
   },
   INVOICE: {
     MERGE_FILE: "/invoice/merge-list",
     DETAIL: ENDPOINT_VERSION.V2 +  "/invoice/extract-xml-data",
   }
-
 };
 
 export { ENDPOINT };
