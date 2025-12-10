@@ -3,10 +3,12 @@ import { Navigate, Route, Routes } from "react-router-dom";
 import "./App.css";
 import InvoiceManagementComponent from "./component/invoice/InvoiceManagement.component";
 import LoginComponent from "./component/login/Login.component";
-import AppBarComponent from "./component/appbar/AppBar.component";
+import AppBarComponent from "./component/general-component/appbar/AppBar.component";
 import ExcelInvoiceMergeComponent from "./component/invoicefilemerge/ExcelInvoiceMerge.component";
 import InvoiceFileListComponent from "./component/invoicefilelist/InvoiceFileList.component";
 import InvoiceDetailComponent from "./component/invoiceextract/InvoiceDetail.component";
+import SidebarComponent from "./component/general-component/sidebar/Sidebar.component";
+import { Box, Toolbar } from "@mui/material";
 
 export default function App() {
   const checkAccessToken = () => {
@@ -14,9 +16,11 @@ export default function App() {
   };
 
   return (
-    <>
+    <Box sx={{ display: 'flex' }}>
       <AppBarComponent></AppBarComponent>
-      <div className="page-container">
+      <SidebarComponent></SidebarComponent>
+      <Box component="main" sx={{ flexGrow: 1, p: 3 }}>
+        <Toolbar />
         <Routes>
           <Route path="/" element={<Navigate to="/login" />}></Route>
           <Route path="/login" element={<LoginComponent />}></Route>
@@ -38,12 +42,9 @@ export default function App() {
             path="/invoices-list"
             element={<InvoiceFileListComponent />}
           ></Route>
-          <Route
-            path="/detail"
-            element={<InvoiceDetailComponent />}
-          ></Route>
+          <Route path="/detail" element={<InvoiceDetailComponent />}></Route>
         </Routes>
-      </div>
-    </>
+      </Box>
+    </Box>
   );
 }
