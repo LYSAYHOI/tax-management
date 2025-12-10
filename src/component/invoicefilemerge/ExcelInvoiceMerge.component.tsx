@@ -3,6 +3,7 @@ import { useMemo, useState } from "react";
 import { useDropzone } from "react-dropzone";
 import "./ExcelInvoiceMerge.style.css";
 import { mergeFile } from "../../service/MergeFileService";
+import { downloadFile } from "../../util/AppUtils";
 
 const baseStyle = {
   flex: 1,
@@ -60,22 +61,27 @@ export default function ExcelInvoiceMergeComponent() {
     downloadFile(content.data, "mergedFile.xlsx", "application/vnd.ms-excel");
   };
 
-  const downloadFile = (fileContent: any, filename: string, type: string) => {
-    const blob = new Blob([fileContent]);
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = filename;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-  };
-
   return (
     <div>
+      <div style={{ marginBottom: '20px' }}>
+        <h2>Ghép File Hóa Đơn Excel</h2>
+        <p style={{ color: '#666', marginTop: '10px', lineHeight: '1.6' }}>
+          Tính năng này cho phép bạn gộp nhiều file Excel hóa đơn thành một file duy nhất. 
+          Hệ thống sẽ tự động đọc dữ liệu từ tất cả các file Excel được chọn và hợp nhất chúng 
+          vào một file Excel tổng hợp, giúp bạn dễ dàng quản lý và theo dõi toàn bộ hóa đơn 
+          trong một tài liệu duy nhất.
+        </p>
+        <p style={{ color: '#1976d2', fontStyle: 'italic', marginTop: '8px' }}>
+          <strong>Hướng dẫn:</strong> Chọn nhiều file Excel (.xlsx, .xls) cùng lúc bằng cách 
+          kéo thả hoặc nhấp vào vùng bên dưới, sau đó nhấn nút "Ghép" để tạo file tổng hợp.
+        </p>
+      </div>
       <div {...getRootProps({ style })}>
         <input {...getInputProps()} />
-        <p>Chọn File Hóa Đơn để ghép</p>
+        <p>Chọn File Excel Hóa Đơn để Ghép (Kéo thả hoặc nhấp để chọn)</p>
+        <em style={{ fontSize: '12px', marginTop: '8px', color: '#999' }}>
+          Chấp nhận file định dạng .xlsx và .xls
+        </em>
       </div>
       <div className="merge-control">
         <div>

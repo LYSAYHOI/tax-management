@@ -34,7 +34,7 @@ export default function LoginComponent() {
 
   return (
     <div className="center">
-      <h2>Nhập mã từ trang thuế</h2>
+      <h2>Nhập mã từ trang thuế để tiếp tục tải hóa đơn</h2>
       <TextField
         type="text"
         value={token}

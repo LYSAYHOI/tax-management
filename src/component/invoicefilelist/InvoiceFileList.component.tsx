@@ -2,20 +2,10 @@ import { Button, ButtonGroup } from "@mui/material";
 import "./InoviceFileList.style.css";
 import { downloadInvoiceMergedFileList } from "../../service/MergeFileService";
 import { useState } from "react";
+import { downloadFile } from "../../util/AppUtils";
 
 export default function InvoiceFileListComponent() {
   const [selectedMonth, setSelectedMonth] = useState<number>(1);
-
-  const downloadFile = (fileContent: any, filename: string) => {
-    const blob = new Blob([fileContent]);
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = filename;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-  };
 
   const selectMonth = (month: number) => {
     setSelectedMonth(month);

@@ -10,6 +10,8 @@ import {
 } from "@mui/material";
 import ReceiptIcon from "@mui/icons-material/Receipt";
 import DataThresholdingIcon from "@mui/icons-material/DataThresholding";
+import MergeIcon from "@mui/icons-material/Merge";
+import ListAltIcon from "@mui/icons-material/ListAlt";
 import { Link, useLocation } from "react-router-dom";
 
 const drawerWidth = 240;
@@ -21,12 +23,26 @@ export default function SidebarComponent() {
     { 
       display: "Hóa Đơn Điện Tử", 
       link: "/invoice-management",
-      icon: <ReceiptIcon />
+      icon: <ReceiptIcon />,
+      isAvailableFeature: true
     },
     { 
       display: "Lấy dữ liệu", 
       link: "/detail",
-      icon: <DataThresholdingIcon />
+      icon: <DataThresholdingIcon />,
+      isAvailableFeature: true
+    },
+    { 
+      display: "Gộp File Excel", 
+      link: "/invoices-excel-merge",
+      icon: <MergeIcon />,
+      isAvailableFeature: true
+    },
+    { 
+      display: "Danh Sách Hóa Đơn", 
+      link: "/invoices-list",
+      icon: <ListAltIcon />,
+      isAvailableFeature: false
     },
   ];
 
@@ -45,7 +61,7 @@ export default function SidebarComponent() {
       <Toolbar />
       <Box sx={{ overflow: "auto" }}>
         <List>
-          {menuItems.map((item) => (
+          {menuItems.filter((item) => item.isAvailableFeature).map((item) => (
             <ListItem key={item.display} disablePadding>
               <ListItemButton
                 component={Link}

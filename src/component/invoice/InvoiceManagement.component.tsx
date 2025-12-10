@@ -5,6 +5,7 @@ import { Get, GetFile } from "../../util/HttpRequest";
 import "./InvoiceManagement.style.css";
 import JSZip, { loadAsync } from "jszip";
 import { useNavigate } from "react-router";
+import { downloadFile } from "../../util/AppUtils";
 import {
   Button,
   CircularProgress,
@@ -87,17 +88,6 @@ export default function InvoiceManagementComponent() {
     setIsLoadingData(true);
     fetchAllInvoice([], undefined, 0);
   }, []);
-
-  const downloadFile = (fileContent: any, filename: string) => {
-    const blob = new Blob([fileContent], { type: "application/zip" });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = filename;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-  };
 
   const fetchAllInvoice = async (
     invoiceList: any[],
@@ -233,7 +223,7 @@ export default function InvoiceManagementComponent() {
           );
         });
         zipFile.generateAsync({ type: "blob" }).then(function (content) {
-          downloadFile(content, "all-invoice.zip");
+          downloadFile(content, "all-invoice.zip", "application/zip");
         });
       });
     });

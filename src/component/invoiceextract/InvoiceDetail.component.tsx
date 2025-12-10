@@ -2,6 +2,7 @@ import { Button, CircularProgress } from "@mui/material";
 import { useMemo, useState } from "react";
 import { useDropzone } from "react-dropzone";
 import { extractFile } from "../../service/MergeFileService";
+import { downloadFile } from "../../util/AppUtils";
 
 const baseStyle = {
   flex: 1,
@@ -77,22 +78,27 @@ export default function InvoiceDetailComponent() {
     }
   };
 
-  const downloadFile = (fileContent: any, filename: string, type: string) => {
-    const blob = new Blob([fileContent]);
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = filename;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-  };
-
   return (
     <div>
+      <div style={{ marginBottom: '20px' }}>
+        <h2>Trích Xuất Dữ Liệu Hóa Đơn</h2>
+        <p style={{ color: '#666', marginTop: '10px', lineHeight: '1.6' }}>
+          Tính năng này cho phép bạn trích xuất thông tin chi tiết từ các file hóa đơn điện tử XML. 
+          Hệ thống sẽ đọc và phân tích dữ liệu từ file XML, sau đó xuất ra file Excel (.xlsx) 
+          chứa đầy đủ thông tin hóa đơn như: số hóa đơn, ngày phát hành, thông tin người bán/mua, 
+          danh sách sản phẩm/dịch vụ, thuế suất, và tổng giá trị, ...
+        </p>
+        <p style={{ color: '#1976d2', fontStyle: 'italic', marginTop: '8px' }}>
+          <strong>Hướng dẫn:</strong> Kéo thả hoặc nhấp vào vùng bên dưới để chọn các file XML hóa đơn, 
+          sau đó nhấn nút "Lấy Dữ Liệu" để xử lý.
+        </p>
+      </div>
       <div {...getRootProps({ style })}>
         <input {...getInputProps()} />
-        <p>Chọn File Hóa Đơn để Lấy Dữ Liệu</p>
+        <p>Chọn File Hóa Đơn XML (Kéo thả hoặc nhấp để chọn)</p>
+        <em style={{ fontSize: '12px', marginTop: '8px', color: '#999' }}>
+          Chỉ chấp nhận file định dạng .xml
+        </em>
       </div>
       <div className="merge-control">
         <div>
