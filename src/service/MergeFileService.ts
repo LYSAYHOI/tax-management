@@ -1,9 +1,10 @@
 import { ENDPOINT } from "../util/Constant"
 import { GetFile, GetFileWithFormData, PostFileWithFormData } from "../util/HttpRequest"
 
-export const mergeFile = (files: File[]) => {
+export const mergeFile = (files: File[], startRow: number) => {
     const formData = new FormData();
     files.forEach(file => formData.append('files', file));
+    formData.append('startRow', startRow.toString());
     return GetFileWithFormData(ENDPOINT.EXCEL_MERGE.MERGE, formData)
 }
 

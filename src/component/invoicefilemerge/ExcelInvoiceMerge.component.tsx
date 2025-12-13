@@ -58,7 +58,7 @@ export default function ExcelInvoiceMergeComponent() {
   );
 
   const onMergeFile = async () => {
-    const content = await mergeFile(files);
+    const content = await mergeFile(files, startRow);
     downloadFile(content.data, "mergedFile.xlsx", "application/vnd.ms-excel");
   };
 
@@ -88,9 +88,25 @@ export default function ExcelInvoiceMergeComponent() {
           slotProps={{
             htmlInput: { min: 1 }
           }}
-          helperText="Nhập số dòng bắt đầu sao chép dữ liệu (mặc định: 1)"
+          helperText="Nhập số dòng bắt đầu sao chép dữ liệu hoặc chọn loại hóa đơn để gộp bên dưới"
           style={{ width: '300px' }}
         />
+        <div style={{ marginTop: '10px', display: 'flex', gap: '10px' }}>
+          <Button 
+            variant="outlined" 
+            size="small"
+            onClick={() => setStartRow(20)}
+          >
+            Gộp hóa đơn mua hàng (dòng thứ 20)
+          </Button>
+          <Button 
+            variant="outlined" 
+            size="small"
+            onClick={() => setStartRow(6)}
+          >
+            Gộp hóa đơn điện tử (dòng thứ 6)
+          </Button>
+        </div>
       </div>
       <div {...getRootProps({ style })}>
         <input {...getInputProps()} />
