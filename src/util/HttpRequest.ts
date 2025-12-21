@@ -6,7 +6,7 @@ const instance = axios.create({
   // baseURL: `http://localhost:8080`,
   // baseURL: "https://tax-management-server-sxxvb4l3sq-as.a.run.app",
   baseURL: "http://51.79.173.142:30001",
-  timeout: 1000 * 15,
+  timeout: 1000 * 60,
 });
 
 const getAuthorizationHeader = () => ({

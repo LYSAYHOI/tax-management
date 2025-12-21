@@ -36,6 +36,7 @@ const rejectStyle = {
 export default function ExcelInvoiceMergeComponent() {
   const [files, setFiles] = useState<File[]>([]);
   const [startRow, setStartRow] = useState<number>(1);
+  const [errorMessage, setErrorMessage] = useState<string>("");
 
   const { getRootProps, getInputProps, isFocused, isDragAccept, isDragReject } =
     useDropzone({
@@ -44,6 +45,7 @@ export default function ExcelInvoiceMergeComponent() {
       },
       onDrop: (acceptedFiles) => {
         setFiles(acceptedFiles);
+        setErrorMessage(""); // Clear error when new files are selected
       },
     });
 
@@ -58,8 +60,21 @@ export default function ExcelInvoiceMergeComponent() {
   );
 
   const onMergeFile = async () => {
-    const content = await mergeFile(files, startRow);
-    downloadFile(content.data, "mergedFile.xlsx", "application/vnd.ms-excel");
+    setErrorMessage(""); // Clear previous errors
+    try {
+      if (files.length === 0) {
+        setErrorMessage("Vui lòng chọn ít nhất một file Excel để ghép");
+        return;
+      }
+      const content = await mergeFile(files, startRow);
+      downloadFile(content.data, "mergedFile.xlsx", "application/vnd.ms-excel");
+    } catch (error: any) {
+      console.error("Error merging files:", error);
+      const errorMsg = error?.response?.data?.message || 
+                      error?.message || 
+                      "Có lỗi xảy ra khi ghép file. Vui lòng thử lại.";
+      setErrorMessage(errorMsg);
+    }
   };
 
   return (
@@ -95,9 +110,9 @@ export default function ExcelInvoiceMergeComponent() {
           <Button 
             variant="outlined" 
             size="small"
-            onClick={() => setStartRow(20)}
+            onClick={() => setStartRow(33)}
           >
-            Gộp hóa đơn mua hàng (dòng thứ 20)
+            Gộp hóa đơn mua hàng (dòng thứ 33)
           </Button>
           <Button 
             variant="outlined" 
@@ -115,6 +130,24 @@ export default function ExcelInvoiceMergeComponent() {
           Chấp nhận file định dạng .xlsx và .xls
         </em>
       </div>
+      {errorMessage && (
+        <div style={{ 
+          marginTop: '20px', 
+          padding: '12px 16px', 
+          backgroundColor: '#ffebee', 
+          borderLeft: '4px solid #f44336',
+          borderRadius: '4px'
+        }}>
+          <p style={{ 
+            color: '#c62828', 
+            margin: 0,
+            fontSize: '14px',
+            fontWeight: '500'
+          }}>
+            Lỗi: ⚠️ {errorMessage}
+          </p>
+        </div>
+      )}
       <div className="merge-control">
         <div>
           <h4>Files</h4>
