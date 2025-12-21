@@ -1,4 +1,4 @@
-import { Button, TextField } from "@mui/material";
+import { Button, TextField, CircularProgress } from "@mui/material";
 import { useMemo, useState } from "react";
 import { useDropzone } from "react-dropzone";
 import "./ExcelInvoiceMerge.style.css";
@@ -35,8 +35,9 @@ const rejectStyle = {
 
 export default function ExcelInvoiceMergeComponent() {
   const [files, setFiles] = useState<File[]>([]);
-  const [startRow, setStartRow] = useState<number>(1);
+  const [startRow, setStartRow] = useState<number>(33);
   const [errorMessage, setErrorMessage] = useState<string>("");
+  const [isLoading, setIsLoading] = useState<boolean>(false);
 
   const { getRootProps, getInputProps, isFocused, isDragAccept, isDragReject } =
     useDropzone({
@@ -61,9 +62,11 @@ export default function ExcelInvoiceMergeComponent() {
 
   const onMergeFile = async () => {
     setErrorMessage(""); // Clear previous errors
+    setIsLoading(true); // Start loading
     try {
       if (files.length === 0) {
         setErrorMessage("Vui lòng chọn ít nhất một file Excel để ghép");
+        setIsLoading(false);
         return;
       }
       const content = await mergeFile(files, startRow);
@@ -74,6 +77,8 @@ export default function ExcelInvoiceMergeComponent() {
                       error?.message || 
                       "Có lỗi xảy ra khi ghép file. Vui lòng thử lại.";
       setErrorMessage(errorMsg);
+    } finally {
+      setIsLoading(false); // Stop loading
     }
   };
 
@@ -157,8 +162,13 @@ export default function ExcelInvoiceMergeComponent() {
             ))}
           </ul>
         </div>
-        <Button variant="contained" onClick={onMergeFile}>
-          Ghép
+        <Button 
+          variant="contained" 
+          onClick={onMergeFile}
+          disabled={isLoading || files.length === 0}
+          startIcon={isLoading ? <CircularProgress size={20} color="inherit" /> : null}
+        >
+          {isLoading ? "Đang ghép..." : "Ghép"}
         </Button>
       </div>
     </div>
