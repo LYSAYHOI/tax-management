@@ -5,7 +5,7 @@ export const mergeFile = (files: File[], startRow: number) => {
     const formData = new FormData();
     files.forEach(file => formData.append('files', file));
     formData.append('startRow', startRow.toString());
-    return GetFileWithFormData(ENDPOINT.EXCEL_MERGE.MERGE, formData)
+    return GetFileWithFormData(ENDPOINT.EXCEL_MERGE.MERGE, formData, 1000 * 60 * 15) // 15 minutes timeout
 }
 
 export const downloadInvoiceMergedFileList = (month: number) => {

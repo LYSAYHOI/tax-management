@@ -42,10 +42,11 @@ const GetFileNew = (payload: any) => {
   );
 };
 
-const GetFileWithFormData = (url: string, formData: FormData) => {
+const GetFileWithFormData = (url: string, formData: FormData, timeout?: number) => {
   return instance.post(url, formData, {
     responseType: "arraybuffer",
     headers: { "Content-Type": "blob" },
+    ...(timeout && { timeout }),
   });
 };
 
