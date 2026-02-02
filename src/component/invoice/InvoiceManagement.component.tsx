@@ -72,7 +72,7 @@ export default function InvoiceManagementComponent() {
         ? ENDPOINT.INVOICE_TAX.MTT_INVOICE_LIST_API
         : ENDPOINT.INVOICE_TAX.INVOICE_LIST_API,
       {
-        sort: "tdlap:desc,khmshdon:asc,shdon:desc",
+        sort: "tdlap:desc",
         size: 50,
         search: `tdlap=ge=${fromDate.format(
           "DD/MM/yyyy"
