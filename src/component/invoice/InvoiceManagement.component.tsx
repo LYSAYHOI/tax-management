@@ -1,8 +1,7 @@
 import moment from "moment";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { ENDPOINT } from "../../util/Constant";
 import { Get, GetFile } from "../../util/HttpRequest";
-import "./InvoiceManagement.style.css";
 import JSZip, { loadAsync } from "jszip";
 import { useNavigate } from "react-router";
 import { downloadFile } from "../../util/AppUtils";
@@ -84,44 +83,77 @@ export default function InvoiceManagementComponent() {
     );
   };
 
-  useEffect(() => {
-    setIsLoadingData(true);
-    fetchAllInvoice([], undefined, 0);
-  }, []);
+  const PAGE_REQUEST_DELAY_MS = 1000; // delay between page requests to avoid 429
+  const DOWNLOAD_REQUEST_DELAY_MS = 1000; // delay between file downloads to avoid 429
+  const MAX_RETRY_ON_429 = 5;
+  const fetchRunIdRef = useRef(0);
 
-  const fetchAllInvoice = async (
-    invoiceList: any[],
-    state: string | undefined,
-    page: number // page start from 0
-  ) => {
+  const sleep = (ms: number) =>
+    new Promise((resolve) => setTimeout(resolve, ms));
+
+  // Retry with backoff when server responds 429 Too Many Requests
+  const requestWithRetry = async <T,>(
+    request: () => Promise<T>,
+    retry = 0
+  ): Promise<T> => {
     try {
-      const res = await fetchInvoiceData(state);
-      const {
-        datas: dataRes,
-        state: stateRes,
-        total: totalRes,
-      } = res.data as InvoiceData;
-      const dataResMapIndex = dataRes?.map((data, index) => ({
-        ...data,
-        index: page * 50 + index + 1,
-      }));
-      invoiceList.push(...(dataResMapIndex || []));
-      if (stateRes) {
-        fetchAllInvoice(invoiceList, stateRes, page + 1);
-      } else {
-        setInvoiceData({
-          datas: [...invoiceList],
-          total: totalRes,
-        });
-        setIsLoadingData(false);
+      return await request();
+    } catch (err) {
+      const response = (err as AxiosError).response;
+      if (response?.status === 429 && retry < MAX_RETRY_ON_429) {
+        const retryAfterSeconds = Number(response.headers?.["retry-after"]);
+        await sleep(
+          retryAfterSeconds > 0
+            ? retryAfterSeconds * 1000
+            : 1000 * 2 ** (retry + 1)
+        );
+        return requestWithRetry(request, retry + 1);
       }
+      throw err;
+    }
+  };
+
+  const fetchInvoicePage = (state: string | undefined) =>
+    requestWithRetry(() => fetchInvoiceData(state));
+
+  const fetchAllInvoice = async () => {
+    // only the latest run updates state, older runs stop
+    const runId = ++fetchRunIdRef.current;
+    const invoiceList: any[] = [];
+    let state: string | undefined = undefined;
+    let page = 0; // page start from 0
+    let total: number | undefined = undefined;
+    setIsLoadingData(true);
+    try {
+      do {
+        if (page > 0) await sleep(PAGE_REQUEST_DELAY_MS);
+        if (runId !== fetchRunIdRef.current) return;
+        const res = await fetchInvoicePage(state);
+        if (runId !== fetchRunIdRef.current) return;
+        const {
+          datas: dataRes,
+          state: stateRes,
+          total: totalRes,
+        } = res.data as InvoiceData;
+        const dataResMapIndex = dataRes?.map((data, index) => ({
+          ...data,
+          index: page * 50 + index + 1,
+        }));
+        invoiceList.push(...(dataResMapIndex || []));
+        state = stateRes;
+        total = totalRes;
+        page++;
+      } while (state);
+      setInvoiceData({ datas: invoiceList, total });
     } catch {
-      setIsLoadingData(false);
+      // keep existing behavior: stop loading on error
+    } finally {
+      if (runId === fetchRunIdRef.current) setIsLoadingData(false);
     }
   };
 
   useEffect(() => {
-    fetchAllInvoice([], undefined, 0);
+    fetchAllInvoice();
   }, []);
 
   const downloadAllFileInAllPages = () => {
@@ -137,16 +169,19 @@ export default function InvoiceManagementComponent() {
     let i = 0;
     for (const invoice of invoiceList) {
       try {
-        const res = await GetFile(
-          ttxly == 8
-            ? ENDPOINT.INVOICE_TAX.MTT_EXPORT_INVOICE_API
-            : ENDPOINT.INVOICE_TAX.EXPORT_INVOICE_API,
-          {
-            nbmst: invoice.nbmst,
-            khhdon: invoice.khhdon,
-            shdon: invoice.shdon,
-            khmshdon: invoice.khmshdon,
-          }
+        if (i > 0) await sleep(DOWNLOAD_REQUEST_DELAY_MS);
+        const res = await requestWithRetry(() =>
+          GetFile(
+            ttxly == 8
+              ? ENDPOINT.INVOICE_TAX.MTT_EXPORT_INVOICE_API
+              : ENDPOINT.INVOICE_TAX.EXPORT_INVOICE_API,
+            {
+              nbmst: invoice.nbmst,
+              khhdon: invoice.khhdon,
+              shdon: invoice.shdon,
+              khmshdon: invoice.khmshdon,
+            }
+          )
         );
         if (res.data) {
           fileDataList.push({ fileData: res.data, invoice });
@@ -265,7 +300,7 @@ export default function InvoiceManagementComponent() {
     setDownloadResult({});
     setHasAnyDownloadFail(false);
     setInvoiceData({});
-    fetchAllInvoice([], undefined, 0);
+    fetchAllInvoice();
     setInprogressDownloadNumber(0);
     setHasAnyDownloadFail(false);
     setHasDownloadDetail(false);
